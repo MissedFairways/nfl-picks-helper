@@ -1,1 +1,123 @@
-
+[
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-05",
+    "home_team": "Kansas City Chiefs",
+    "away_team": "Baltimore Ravens",
+    "home_score": 27,
+    "away_score": 20,
+    "spread": -3,
+    "total": 46.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-06",
+    "home_team": "Philadelphia Eagles",
+    "away_team": "Green Bay Packers",
+    "home_score": 34,
+    "away_score": 29,
+    "spread": -2.5,
+    "total": 48.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "Buffalo Bills",
+    "away_team": "Arizona Cardinals",
+    "home_score": 34,
+    "away_score": 28,
+    "spread": -6.5,
+    "total": 48.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "New Orleans Saints",
+    "away_team": "Carolina Panthers",
+    "home_score": 47,
+    "away_score": 10,
+    "spread": -4,
+    "total": 41.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "Indianapolis Colts",
+    "away_team": "Houston Texans",
+    "home_score": 27,
+    "away_score": 29,
+    "spread": 1.5,
+    "total": 47.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "Miami Dolphins",
+    "away_team": "Jacksonville Jaguars",
+    "home_score": 20,
+    "away_score": 17,
+    "spread": -3.5,
+    "total": 49.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "New York Giants",
+    "away_team": "Minnesota Vikings",
+    "home_score": 6,
+    "away_score": 28,
+    "spread": 1.5,
+    "total": 41.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "Cincinnati Bengals",
+    "away_team": "New England Patriots",
+    "home_score": 10,
+    "away_score": 16,
+    "spread": -8.5,
+    "total": 40.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "Atlanta Falcons",
+    "away_team": "Pittsburgh Steelers",
+    "home_score": 10,
+    "away_score": 18,
+    "spread": -3,
+    "total": 42
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "Chicago Bears",
+    "away_team": "Tennessee Titans",
+    "home_score": 24,
+    "away_score": 17,
+    "spread": -4.5,
+    "total": 43.5
+  },
+  {
+    "season": 2024,
+    "week": 1,
+    "date": "2024-09-08",
+    "home_team": "San Francisco 49ers",
+    "away_team": "New York Jets",
+    "home_score": 32,
+    "away_score": 19,
+    "spread": -6.5,
+    "total": 45.5
+  }
+]
