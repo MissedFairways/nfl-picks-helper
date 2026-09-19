@@ -3,7 +3,6 @@ let allGames = [];
 async function loadData() {
   const statusMessage = document.getElementById("status-message");
   const weekSelect = document.getElementById("week-select");
-  const gamesBody = document.getElementById("games-body");
 
   try {
     const response = await fetch("data/historical.json");
@@ -47,7 +46,6 @@ function renderTable(weekLabel) {
   const gamesBody = document.getElementById("games-body");
   gamesBody.innerHTML = "";
 
-  // Extract week number and season from the label (e.g. "Week 1 (2024)")
   const match = weekLabel.match(/Week (\d+) \((\d+)\)/);
   if (!match) return;
 
@@ -57,11 +55,41 @@ function renderTable(weekLabel) {
   const filtered = allGames.filter(g => g.week === weekNum && g.season === season);
 
   if (filtered.length === 0) {
-    gamesBody.innerHTML = `<tr><td colspan="7">No games found for this week</td></tr>`;
+    gamesBody.innerHTML = `<tr><td colspan="9">No games found for this week</td></tr>`;
     return;
   }
 
   filtered.forEach(game => {
+    // Determine the favorite and spread from favorite's perspective
+    let favorite, spreadFav, atsResult;
+
+    if (game.spread < 0) {
+      // Home team is favorite
+      favorite = game.home_team;
+      spreadFav = game.spread; // already negative
+    } else if (game.spread > 0) {
+      // Away team is favorite
+      favorite = game.away_team;
+      spreadFav = -game.spread; // make it negative
+    } else {
+      favorite = "Pick'em";
+      spreadFav = 0;
+    }
+
+    // Calculate ATS result
+    const homeMargin = game.home_score - game.away_score;
+    const adjustedMargin = homeMargin + game.spread; // positive = home covered
+
+    if (game.spread === 0) {
+      atsResult = "Pick'em";
+    } else if (adjustedMargin > 0) {
+      atsResult = game.home_team + " covered";
+    } else if (adjustedMargin < 0) {
+      atsResult = game.away_team + " covered";
+    } else {
+      atsResult = "Push";
+    }
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${game.date}</td>
@@ -69,8 +97,10 @@ function renderTable(weekLabel) {
       <td>${game.away_score}</td>
       <td>${game.home_team}</td>
       <td>${game.home_score}</td>
-      <td>${game.spread > 0 ? "+" : ""}${game.spread}</td>
+      <td>${favorite}</td>
+      <td>${spreadFav}</td>
       <td>${game.total}</td>
+      <td>${atsResult}</td>
     `;
     gamesBody.appendChild(row);
   });
