@@ -13,22 +13,37 @@
       <p class="subtitle">Historical data + analysis for better football picks</p>
     </header>
 
-    <main>
-      <section class="status-box">
-        <h2>Status</h2>
-        <p id="status-message">Loading data...</p>
-      </section>
+    <section class="controls">
+      <label for="week-select">Select Week:</label>
+      <select id="week-select">
+        <option value="">Loading weeks...</option>
+      </select>
+    </section>
 
-      <section class="placeholder">
-        <h2>Coming Next</h2>
-        <ul>
-          <li>Historical game results & betting lines</li>
-          <li>Against-the-spread (ATS) records</li>
-          <li>Over/Under trends</li>
-          <li>Team filters and simple analysis tools</li>
-        </ul>
-      </section>
-    </main>
+    <section class="status-box">
+      <p id="status-message">Loading data...</p>
+    </section>
+
+    <section class="table-section">
+      <div class="table-wrapper">
+        <table id="games-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Away</th>
+              <th>Score</th>
+              <th>Home</th>
+              <th>Score</th>
+              <th>Spread</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="games-body">
+            <!-- Games will appear here -->
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <footer>
       <p>Built with help from Grok • Data for informational purposes only</p>
@@ -37,4 +52,4 @@
 
   <script src="app.js"></script>
 </body>
-</html>
+</html>>
