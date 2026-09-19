@@ -10,7 +10,7 @@
   <div class="container">
     <header>
       <h1>NFL Picks Helper</h1>
-      <p class="subtitle">Historical data + analysis for better football picks</p>
+      <p class="subtitle">Current week schedule + lines</p>
     </header>
 
     <section class="controls">
@@ -24,27 +24,8 @@
       <p id="status-message">Loading data...</p>
     </section>
 
-    <section class="table-section">
-      <div class="table-wrapper">
-        <table id="games-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Away</th>
-              <th>Score</th>
-              <th>Home</th>
-              <th>Score</th>
-              <th>Favorite</th>
-              <th>Spread (Fav)</th>
-              <th>Total</th>
-              <th>ATS Result</th>
-            </tr>
-          </thead>
-          <tbody id="games-body">
-            <!-- Games will appear here -->
-          </tbody>
-        </table>
-      </div>
+    <section id="games-container" class="games-container">
+      <!-- Game cards will appear here -->
     </section>
 
     <footer>
