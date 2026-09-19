@@ -119,5 +119,104 @@
     "away_score": 19,
     "spread": -6.5,
     "total": 45.5
+  },
+  {
+    "season": 2024,
+    "week": 2,
+    "date": "2024-09-12",
+    "home_team": "Buffalo Bills",
+    "away_team": "Miami Dolphins",
+    "home_score": 31,
+    "away_score": 10,
+    "spread": -5.5,
+    "total": 48
+  },
+  {
+    "season": 2024,
+    "week": 2,
+    "date": "2024-09-15",
+    "home_team": "Minnesota Vikings",
+    "away_team": "San Francisco 49ers",
+    "home_score": 23,
+    "away_score": 17,
+    "spread": 4.5,
+    "total": 46.5
+  },
+  {
+    "season": 2024,
+    "week": 2,
+    "date": "2024-09-15",
+    "home_team": "Detroit Lions",
+    "away_team": "Tampa Bay Buccaneers",
+    "home_score": 20,
+    "away_score": 16,
+    "spread": -7.5,
+    "total": 51.5
+  },
+  {
+    "season": 2024,
+    "week": 2,
+    "date": "2024-09-15",
+    "home_team": "Green Bay Packers",
+    "away_team": "Indianapolis Colts",
+    "home_score": 16,
+    "away_score": 10,
+    "spread": -3,
+    "total": 43
+  },
+  {
+    "season": 2024,
+    "week": 2,
+    "date": "2024-09-15",
+    "home_team": "Seattle Seahawks",
+    "away_team": "New England Patriots",
+    "home_score": 23,
+    "away_score": 20,
+    "spread": -3.5,
+    "total": 39
+  },
+  {
+    "season": 2024,
+    "week": 3,
+    "date": "2024-09-22",
+    "home_team": "New York Jets",
+    "away_team": "New England Patriots",
+    "home_score": 24,
+    "away_score": 3,
+    "spread": -6.5,
+    "total": 39.5
+  },
+  {
+    "season": 2024,
+    "week": 3,
+    "date": "2024-09-22",
+    "home_team": "Tampa Bay Buccaneers",
+    "away_team": "Denver Broncos",
+    "home_score": 26,
+    "away_score": 16,
+    "spread": -6,
+    "total": 40.5
+  },
+  {
+    "season": 2024,
+    "week": 3,
+    "date": "2024-09-22",
+    "home_team": "Minnesota Vikings",
+    "away_team": "Houston Texans",
+    "home_score": 34,
+    "away_score": 7,
+    "spread": -1.5,
+    "total": 46.5
+  },
+  {
+    "season": 2024,
+    "week": 3,
+    "date": "2024-09-22",
+    "home_team": "Seattle Seahawks",
+    "away_team": "Miami Dolphins",
+    "home_score": 24,
+    "away_score": 3,
+    "spread": -4.5,
+    "total": 42
   }
 ]
