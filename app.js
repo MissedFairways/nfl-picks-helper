@@ -1,75 +1,96 @@
-let allGames = [];
+// ======================
+// PUT YOUR API KEY HERE
+// ======================
+const ODDS_API_KEY = "PASTE_YOUR_NEW_KEY_HERE";
 
-async function loadData() {
-  const statusMessage = document.getElementById("status-message");
-  const weekSelect = document.getElementById("week-select");
+// ======================
 
+let historicalGames = [];
+let liveOdds = [];
+
+async function loadHistorical() {
   try {
     const response = await fetch("data/historical.json");
     if (!response.ok) throw new Error("Could not load historical.json");
+    historicalGames = await response.json();
+  } catch (error) {
+    console.error("Historical data error:", error);
+  }
+}
 
-    allGames = await response.json();
+async function loadLiveOdds() {
+  const statusMessage = document.getElementById("status-message");
+  const weekSelect = document.getElementById("week-select");
 
-    // For now we still use the sample data as a stand-in
-    // Later this will be replaced by current week schedule + live odds
-    statusMessage.textContent = `Historical data loaded (${allGames.length} games) — currently showing sample schedule`;
-    statusMessage.style.color = "#4ade80";
+  statusMessage.textContent = "Loading live odds...";
+  statusMessage.style.color = "#fbbf24";
 
-    // Build week dropdown
-    const weeks = [...new Set(allGames.map(g => `Week ${g.week} (${g.season})`))].sort();
+  try {
+    const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds?regions=us&markets=spreads,totals&oddsFormat=american&apiKey=${ODDS_API_KEY}`;
     
-    weekSelect.innerHTML = "";
-    weeks.forEach(weekLabel => {
-      const option = document.createElement("option");
-      option.value = weekLabel;
-      option.textContent = weekLabel;
-      weekSelect.appendChild(option);
-    });
-
-    if (weeks.length > 0) {
-      weekSelect.value = weeks[0];
-      renderGames(weeks[0]);
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to load odds");
     }
 
-    weekSelect.addEventListener("change", () => {
-      renderGames(weekSelect.value);
-    });
+    liveOdds = await response.json();
+
+    statusMessage.textContent = `Live odds loaded — ${liveOdds.length} games available`;
+    statusMessage.style.color = "#4ade80";
+
+    // Build a simple "Current Games" option for now
+    weekSelect.innerHTML = "";
+    const option = document.createElement("option");
+    option.value = "current";
+    option.textContent = "Current NFL Games";
+    weekSelect.appendChild(option);
+
+    renderLiveGames();
 
   } catch (error) {
     console.error(error);
-    statusMessage.textContent = "Error loading data";
+    statusMessage.textContent = `Error loading odds: ${error.message}`;
     statusMessage.style.color = "#f87171";
   }
 }
 
-function renderGames(weekLabel) {
+function renderLiveGames() {
   const container = document.getElementById("games-container");
   container.innerHTML = "";
 
-  const match = weekLabel.match(/Week (\d+) \((\d+)\)/);
-  if (!match) return;
-
-  const weekNum = parseInt(match[1]);
-  const season = parseInt(match[2]);
-
-  const filtered = allGames.filter(g => g.week === weekNum && g.season === season);
-
-  if (filtered.length === 0) {
-    container.innerHTML = `<p style="color:#94a3b8">No games found for this week</p>`;
+  if (liveOdds.length === 0) {
+    container.innerHTML = `<p style="color:#94a3b8">No live games found right now.</p>`;
     return;
   }
 
-  filtered.forEach(game => {
-    // Determine favorite
-    let favoriteName = "Pick'em";
-    let spreadDisplay = "0";
+  liveOdds.forEach(game => {
+    // Get the first bookmaker that has spreads (usually reliable)
+    const bookmaker = game.bookmakers?.[0];
+    if (!bookmaker) return;
 
-    if (game.spread < 0) {
-      favoriteName = game.home_team;
-      spreadDisplay = game.spread;
-    } else if (game.spread > 0) {
-      favoriteName = game.away_team;
-      spreadDisplay = -game.spread;
+    const spreadMarket = bookmaker.markets.find(m => m.key === "spreads");
+    const totalsMarket = bookmaker.markets.find(m => m.key === "totals");
+
+    let homeSpread = "N/A";
+    let total = "N/A";
+    let favorite = "N/A";
+
+    if (spreadMarket) {
+      const homeOutcome = spreadMarket.outcomes.find(o => o.name === game.home_team);
+      const awayOutcome = spreadMarket.outcomes.find(o => o.name === game.away_team);
+
+      if (homeOutcome) {
+        homeSpread = homeOutcome.point;
+        // Negative point means home is favorite
+        favorite = homeOutcome.point < 0 ? game.home_team : game.away_team;
+      }
+    }
+
+    if (totalsMarket) {
+      const over = totalsMarket.outcomes.find(o => o.name === "Over");
+      if (over) total = over.point;
     }
 
     const card = document.createElement("div");
@@ -77,12 +98,12 @@ function renderGames(weekLabel) {
 
     card.innerHTML = `
       <div class="matchup">
-        ${game.away_team} @ <span class="${favoriteName === game.home_team ? 'favorite' : ''}">${game.home_team}</span>
+        ${game.away_team} @ <span class="${favorite === game.home_team ? 'favorite' : ''}">${game.home_team}</span>
       </div>
       <div class="lines">
-        <div class="line-item">Favorite: <strong>${favoriteName}</strong></div>
-        <div class="line-item">Current Line: <strong>${spreadDisplay}</strong></div>
-        <div class="line-item">Total: <strong>${game.total}</strong></div>
+        <div class="line-item">Favorite: <strong>${favorite}</strong></div>
+        <div class="line-item">Current Line: <strong>${homeSpread}</strong></div>
+        <div class="line-item">Total: <strong>${total}</strong></div>
       </div>
       <div class="movement">
         Opening line & movement coming later
@@ -93,5 +114,10 @@ function renderGames(weekLabel) {
   });
 }
 
-// Start
-loadData();
+// Start everything
+async function init() {
+  await loadHistorical();   // still loads in the background
+  await loadLiveOdds();     // main thing we show
+}
+
+init();
