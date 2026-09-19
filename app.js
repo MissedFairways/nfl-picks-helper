@@ -1,7 +1,7 @@
 // ======================
 // PUT YOUR API KEY HERE
 // ======================
-const ODDS_API_KEY = "PASTE_YOUR_NEW_KEY_HERE";
+const ODDS_API_KEY = "6e1bbc6d8091b3e0db2cd52bff537d33";
 
 // ======================
 
