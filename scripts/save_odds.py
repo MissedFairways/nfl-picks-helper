@@ -1,6 +1,7 @@
 import json
 import os
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 TEAM_ABBR = {
@@ -111,6 +112,18 @@ def current_week_from_espn():
     return season, week
 
 
+def choose_slot(existing):
+    weekday = datetime.now(timezone.utc).weekday()
+    # Monday=0, Tuesday=1, Saturday=5
+    if weekday == 1:
+        return "open"
+    if weekday == 5:
+        return "late"
+    if not existing.get("open"):
+        return "open"
+    return "late"
+
+
 def main():
     api_key = os.environ.get("ODDS_API_KEY")
     if not api_key:
@@ -126,17 +139,30 @@ def main():
     )
     odds_games = normalize_odds(get_json(odds_url))
 
-    snapshot = {
-        "season": season,
-        "week": week,
-        "saved_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
-        "games": odds_games,
-    }
-
     folder = Path("data/snapshots")
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{season}_week_{week}.json"
-    path.write_text(json.dumps(snapshot, indent=2))
+
+    existing = {"season": season, "week": week, "open": None, "late": None}
+    if path.exists():
+        loaded = json.loads(path.read_text())
+        if isinstance(loaded, dict):
+            existing.update(loaded)
+            if "games" in loaded and not existing.get("open"):
+                existing["open"] = {
+                    "saved_at": loaded.get("saved_at"),
+                    "games": loaded.get("games"),
+                }
+
+    slot = choose_slot(existing)
+    existing[slot] = {
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "games": odds_games,
+    }
+    existing["season"] = season
+    existing["week"] = week
+
+    path.write_text(json.dumps(existing, indent=2))
 
     index_path = folder / "index.json"
     index = []
@@ -148,7 +174,7 @@ def main():
         index.sort()
     index_path.write_text(json.dumps(index, indent=2))
 
-    print(f"Saved {path} with {len(odds_games)} games")
+    print(f"Saved {path} as {slot} with {len(odds_games)} games")
 
 
 if __name__ == "__main__":
