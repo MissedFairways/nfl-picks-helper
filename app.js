@@ -29,8 +29,7 @@ function saveOddsCache(oddsGames) {
 function loadOddsCache() {
   try {
     const raw = localStorage.getItem(ODDS_CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : null;
   } catch (error) {
     return null;
   }
@@ -49,16 +48,14 @@ function saveLineStore(store) {
 }
 
 function gameKey(game) {
-  return `${game.season}_${game.week}_${game.away_team}_${game.home_team}`;
+  return game.season + "_" + game.week + "_" + game.away_team + "_" + game.home_team;
 }
 
 function rememberGames(games) {
   const store = loadLineStore();
-
   games.forEach(game => {
     const key = gameKey(game);
     const prev = store[key] || {};
-
     store[key] = {
       season: game.season ?? prev.season ?? null,
       week: game.week ?? prev.week ?? null,
@@ -76,17 +73,14 @@ function rememberGames(games) {
       savedAt: new Date().toISOString()
     };
   });
-
   saveLineStore(store);
 }
 
 function applySavedGames(games) {
   const store = loadLineStore();
-
   return games.map(game => {
     const saved = store[gameKey(game)];
     if (!saved) return game;
-
     return {
       ...game,
       spread_open: typeof game.spread_open === "number" ? game.spread_open : saved.spread_open,
@@ -103,15 +97,9 @@ function applySavedGames(games) {
 
 function applySnapshotList(games, snapshotGames, field) {
   return games.map(game => {
-    const match = snapshotGames.find(s =>
-      s.away_team === game.away_team && s.home_team === game.home_team
-    );
+    const match = (snapshotGames || []).find(s => s.away_team === game.away_team && s.home_team === game.home_team);
     if (!match || typeof match.spread_close !== "number") return game;
-
-    if (field === "open") {
-      return { ...game, spread_open: game.spread_open ?? match.spread_close };
-    }
-
+    if (field === "open") return { ...game, spread_open: game.spread_open ?? match.spread_close };
     return {
       ...game,
       spread_close: typeof game.spread_close === "number" ? game.spread_close : match.spread_close,
@@ -124,16 +112,11 @@ function applySnapshotList(games, snapshotGames, field) {
 
 async function loadRepoSnapshot(season, week) {
   try {
-    const res = await fetch(`data/snapshots/${season}_week_${week}.json`);
+    const res = await fetch("data/snapshots/" + season + "_week_" + week + ".json");
     if (!res.ok) return { open: [], late: [] };
     const data = await res.json();
-    if (Array.isArray(data.games)) {
-      return { open: data.games, late: data.games };
-    }
-    return {
-      open: data.open?.games || [],
-      late: data.late?.games || []
-    };
+    if (Array.isArray(data.games)) return { open: data.games, late: data.games };
+    return { open: data.open?.games || [], late: data.late?.games || [] };
   } catch (error) {
     return { open: [], late: [] };
   }
@@ -144,18 +127,15 @@ function movementText(game) {
     return "Need Tuesday + Saturday lines to show movement";
   }
   if (game.spread_open === game.spread_close) {
-    return `Open ${game.spread_open} → current ${game.spread_close} • no move`;
+    return "Open " + game.spread_open + " → current " + game.spread_close + " • no move";
   }
-
-  const towardHome = game.spread_close < game.spread_open;
-  const team = towardHome ? game.home_team : game.away_team;
-  return `Open ${game.spread_open} → current ${game.spread_close} • moved toward ${team}`;
+  const team = game.spread_close < game.spread_open ? game.home_team : game.away_team;
+  return "Open " + game.spread_open + " → current " + game.spread_close + " • moved toward " + team;
 }
 
 function getCoverSide(game) {
   if (!game.is_final || game.home_score == null || game.away_score == null) return null;
   if (typeof game.spread_close !== "number") return null;
-
   const homeMargin = game.home_score + game.spread_close;
   if (homeMargin === game.away_score) return "push";
   return homeMargin > game.away_score ? "home" : "away";
@@ -163,11 +143,11 @@ function getCoverSide(game) {
 
 function getCoverResult(game) {
   if (!game.is_final || game.home_score == null || game.away_score == null) return "";
-  const scoreLine = `${game.away_team} ${game.away_score}, ${game.home_team} ${game.home_score}`;
+  const scoreLine = game.away_team + " " + game.away_score + ", " + game.home_team + " " + game.home_score;
   const cover = getCoverSide(game);
-  if (cover === "push") return `${scoreLine} • Push`;
-  if (cover === "home") return `${scoreLine} • ${game.home_team} covered`;
-  if (cover === "away") return `${scoreLine} • ${game.away_team} covered`;
+  if (cover === "push") return scoreLine + " • Push";
+  if (cover === "home") return scoreLine + " • " + game.home_team + " covered";
+  if (cover === "away") return scoreLine + " • " + game.away_team + " covered";
   return scoreLine;
 }
 
@@ -181,7 +161,6 @@ function getPickResult(game) {
 function updateRecord() {
   const store = loadLineStore();
   let wins = 0, losses = 0, pushes = 0;
-
   Object.values(store).forEach(game => {
     if (!game.pick || !game.is_final || typeof game.spread_close !== "number") return;
     if (game.home_score == null || game.away_score == null) return;
@@ -190,8 +169,7 @@ function updateRecord() {
     else if (game.pick === cover) wins += 1;
     else losses += 1;
   });
-
-  recordMessage.textContent = `Your ATS record: ${wins}-${losses}-${pushes}`;
+  recordMessage.textContent = "Your ATS record: " + wins + "-" + losses + "-" + pushes;
 }
 
 function setPick(game, side) {
@@ -201,35 +179,22 @@ function setPick(game, side) {
 }
 
 function csvEscape(value) {
-  const text = value == null ? "" : String(value);
-  return `"${text.replaceAll('"', '""')}"`;
+  return '"' + String(value == null ? "" : value).replaceAll('"', '""') + '"';
 }
 
 function downloadSnapshot() {
-  const store = loadLineStore();
-  const rows = Object.values(store);
+  const rows = Object.values(loadLineStore());
   if (rows.length === 0) {
     statusMessage.textContent = "Nothing to download yet.";
     statusMessage.style.color = "#fbbf24";
     return;
   }
-
-  const headers = [
-    "season","week","away_team","home_team","spread_open","spread_close","total_close",
-    "favorite","bookmaker","away_score","home_score","is_final","pick"
-  ];
+  const headers = ["season","week","away_team","home_team","spread_open","spread_close","total_close","favorite","bookmaker","away_score","home_score","is_final","pick"];
   const lines = [headers.join(",")];
   rows.forEach(g => {
-    lines.push([
-      csvEscape(g.season), csvEscape(g.week), csvEscape(g.away_team), csvEscape(g.home_team),
-      csvEscape(g.spread_open), csvEscape(g.spread_close), csvEscape(g.total_close),
-      csvEscape(g.favorite), csvEscape(g.bookmaker), csvEscape(g.away_score),
-      csvEscape(g.home_score), csvEscape(g.is_final), csvEscape(g.pick)
-    ].join(","));
+    lines.push([g.season,g.week,g.away_team,g.home_team,g.spread_open,g.spread_close,g.total_close,g.favorite,g.bookmaker,g.away_score,g.home_score,g.is_final,g.pick].map(csvEscape).join(","));
   });
-
-  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = "nfl-picks-snapshot.csv";
@@ -277,8 +242,6 @@ function importSnapshot(file) {
     currentSchedule = applySavedGames(currentSchedule);
     rememberGames(currentSchedule);
     renderGames(currentSchedule);
-    statusMessage.textContent = `Imported ${rows.length} saved game(s).`;
-    statusMessage.style.color = "#4ade80";
   };
   reader.readAsText(file);
 }
@@ -286,40 +249,32 @@ function importSnapshot(file) {
 async function loadHistorical() {
   try {
     const response = await fetch("data/historical.json");
-    if (!response.ok) throw new Error("Could not load historical.json");
     historicalGames = await response.json();
   } catch (error) {
-    console.error("Historical load failed:", error);
+    console.error(error);
   }
 }
 
-async function loadRealSchedule(week = null) {
+async function loadRealSchedule(week) {
   statusMessage.textContent = "Loading real NFL schedule...";
-  statusMessage.style.color = "#94a3b8";
-
   currentSchedule = await fetchSchedule(week);
-  if (currentSchedule.length === 0) {
+  if (!currentSchedule.length) {
     statusMessage.textContent = "Could not load schedule";
     statusMessage.style.color = "#f87171";
-    gamesContainer.innerHTML = `<p style="color:#94a3b8">No games found</p>`;
     return;
   }
-
   const cache = loadOddsCache();
   if (cache && Array.isArray(cache.oddsGames)) {
     currentSchedule = mergeOddsIntoSchedule(currentSchedule, cache.oddsGames);
   }
-
-  const season = currentSchedule[0]?.season;
-  const weekNum = currentSchedule[0]?.week;
+  const season = currentSchedule[0].season;
+  const weekNum = currentSchedule[0].week;
   const repo = await loadRepoSnapshot(season, weekNum);
   currentSchedule = applySnapshotList(currentSchedule, repo.open, "open");
   currentSchedule = applySnapshotList(currentSchedule, repo.late, "late");
   currentSchedule = applySavedGames(currentSchedule);
   rememberGames(currentSchedule);
-
-  const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
-  statusMessage.textContent = `Week ${weekNum} ${season} loaded • ${matched} game(s) have a current line`;
+  statusMessage.textContent = "Week " + weekNum + " " + season + " loaded";
   statusMessage.style.color = "#4ade80";
   renderGames(currentSchedule);
 }
@@ -327,70 +282,101 @@ async function loadRealSchedule(week = null) {
 function renderGames(games) {
   gamesContainer.innerHTML = "";
   updateRecord();
-
-  if (!games || games.length === 0) {
-    gamesContainer.innerHTML = `<p style="color:#94a3b8">No games found for this week</p>`;
-    return;
-  }
-
   games.forEach((game, index) => {
     const card = document.createElement("div");
     card.className = "game-card";
-
     let statusText = "Scheduled";
     if (game.is_final) statusText = "Final";
     else if (game.is_in_progress) statusText = "In Progress";
-
-    const hasLine = typeof game.spread_close === "number";
     const favoriteName = game.favorite || "—";
-    const openDisplay = typeof game.spread_open === "number" ? game.spread_open : "—";
-    const spreadDisplay = hasLine ? game.spread_close : "—";
-    const totalDisplay = typeof game.total_close === "number" ? game.total_close : "—";
-    const resultText = getCoverResult(game);
-    const pickResult = getPickResult(game);
-    const homeClass = favoriteName === game.home_team ? "favorite" : "";
-    const awayClass = favoriteName === game.away_team ? "favorite" : "";
     const edge = analyzeMatchup(game, historicalGames);
     const sagarin = sagarinForGame(game, sagarinData);
     const system = scoreGame(game, historicalGames, sagarinData);
-    const notesHtml = edge.notes.map(n => `<li>${n}</li>`).join("");
-    const detailsId = `edge-details-${index}`;
-
-    card.innerHTML = `
-      <div class="matchup">
-        <span class="${awayClass}">${game.away_team}</span>
-        @
-        <span class="${homeClass}">${game.home_team}</span>
-      </div>
-      <div class="lines">
-        <div class="line-item">Status: <strong>${statusText}</strong></div>
-        <div class="line-item">Favorite: <strong>${favoriteName}</strong></div>
-        <div class="line-item">Open: <strong>${openDisplay}</strong></div>
-        <div class="line-item">Current: <strong>${spreadDisplay}</strong></div>
-        <div class="line-item">Total: <strong>${totalDisplay}</strong></div>
-      </div>
-      ${resultText ? `<div class="result-line">${resultText}</div>` : ""}
-      <div class="pick-row">
-        <button class="pick-btn ${game.pick === "away" ? "active" : ""}" data-side="away">Pick ${game.away_team}</button>
-        <button class="pick-btn ${game.pick === "home" ? "active" : ""}" data-side="home">Pick ${game.home_team}</button>
-      </div>
-      <div class="pick-status">
-        ${game.pick ? `Your pick: ${game.pick === "home" ? game.home_team : game.away_team}${pickResult ? " • " + pickResult : ""}` : "No pick yet"}
-      </div>
-      <div class="movement">${movementText(game)}</div>
-      <div class="sagarin-line">${sagarin.note}</div>
-      <div class="historical-line">Historical insight: ${edge.leanTeam ? "EDGE " + edge.leanTeam : edge.leanText}</div>
-      <div class="system-line">${system.text}${system.flags[0] ? " • " + system.flags[0] : ""}</div>
-      <button class="edge-toggle" type="button" data-target="${detailsId}">Edge insights</button>
-      <div class="edge-details hidden" id="${detailsId}">
-        <div class="edge-lean">${edge.leanText}</div>
-        <ul class="edge-notes">${notesHtml}</ul>
-      </div>
-    `;
-
+    const detailsId = "edge-details-" + index;
+    const pickResult = getPickResult(game);
+    const resultText = getCoverResult(game);
+    card.innerHTML =
+      '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + '">' + game.home_team + '</span></div>' +
+      '<div class="lines">' +
+      '<div class="line-item">Status: <strong>' + statusText + '</strong></div>' +
+      '<div class="line-item">Favorite: <strong>' + favoriteName + '</strong></div>' +
+      '<div class="line-item">Open: <strong>' + (typeof game.spread_open === "number" ? game.spread_open : "—") + '</strong></div>' +
+      '<div class="line-item">Current: <strong>' + (typeof game.spread_close === "number" ? game.spread_close : "—") + '</strong></div>' +
+      '<div class="line-item">Total: <strong>' + (typeof game.total_close === "number" ? game.total_close : "—") + '</strong></div>' +
+      '</div>' +
+      (resultText ? '<div class="result-line">' + resultText + '</div>' : '') +
+      '<div class="pick-row"><button class="pick-btn' + (game.pick === "away" ? " active" : "") + '" data-side="away">Pick ' + game.away_team + '</button><button class="pick-btn' + (game.pick === "home" ? " active" : "") + '" data-side="home">Pick ' + game.home_team + '</button></div>' +
+      '<div class="pick-status">' + (game.pick ? ("Your pick: " + (game.pick === "home" ? game.home_team : game.away_team) + (pickResult ? " • " + pickResult : "")) : "No pick yet") + '</div>' +
+      '<div class="movement">' + movementText(game) + '</div>' +
+      '<div class="sagarin-line">' + sagarin.note + '</div>' +
+      '<div class="historical-line">Historical insight: ' + (edge.leanTeam ? ("EDGE " + edge.leanTeam) : edge.leanText) + '</div>' +
+      '<div class="system-line">' + system.text + (system.flags[0] ? " • " + system.flags[0] : "") + '</div>' +
+      '<button class="edge-toggle" type="button" data-target="' + detailsId + '">Edge insights</button>' +
+      '<div class="edge-details hidden" id="' + detailsId + '"><div class="edge-lean">' + edge.leanText + '</div><ul class="edge-notes">' + edge.notes.map(n => "<li>" + n + "</li>").join("") + '</ul></div>';
     card.querySelectorAll(".pick-btn").forEach(btn => {
       btn.addEventListener("click", () => setPick(game, btn.dataset.side));
     });
     gamesContainer.appendChild(card);
   });
+  document.querySelectorAll(".edge-toggle").forEach(button => {
+    button.addEventListener("click", () => {
+      const target = document.getElementById(button.dataset.target);
+      if (!target) return;
+      const isHidden = target.classList.contains("hidden");
+      target.classList.toggle("hidden");
+      button.textContent = isHidden ? "Hide insights" : "Edge insights";
+    });
+  });
+}
+
+async function loadOdds() {
+  loadOddsBtn.disabled = true;
+  try {
+    const oddsGames = await fetchLiveOdds();
+    saveOddsCache(oddsGames);
+    currentSchedule = mergeOddsIntoSchedule(currentSchedule, oddsGames);
+    currentSchedule = applySavedGames(currentSchedule);
+    rememberGames(currentSchedule);
+    renderGames(currentSchedule);
+    statusMessage.textContent = "Live odds loaded";
+    statusMessage.style.color = "#4ade80";
+  } catch (error) {
+    statusMessage.textContent = error.message;
+    statusMessage.style.color = "#f87171";
+  } finally {
+    loadOddsBtn.disabled = false;
+    loadOddsBtn.textContent = "Load live odds";
+  }
+}
+
+function buildWeekDropdown() {
+  weekSelect.innerHTML = "";
+  for (let w = 1; w <= 18; w++) {
+    const option = document.createElement("option");
+    option.value = w;
+    option.textContent = "Week " + w;
+    weekSelect.appendChild(option);
+  }
+  weekSelect.addEventListener("change", () => loadRealSchedule(parseInt(weekSelect.value, 10)));
+}
+
+async function startApp() {
+  buildWeekDropdown();
+  loadOddsBtn.addEventListener("click", loadOdds);
+  downloadBtn.addEventListener("click", downloadSnapshot);
+  importInput.addEventListener("change", () => {
+    if (importInput.files[0]) importSnapshot(importInput.files[0]);
+  });
+  await loadHistorical();
+  try {
+    sagarinData = await loadSagarin();
+  } catch (error) {
+    sagarinData = null;
+  }
+  const currentWeek = await fetchCurrentWeekNumber();
+  weekSelect.value = String(currentWeek);
+  await loadRealSchedule(currentWeek);
+}
+
+startApp();
 
