@@ -1,4 +1,4 @@
-import { fetchSchedule } from "./js/schedule.js";
+import { fetchSchedule, fetchCurrentWeekNumber } from "./js/schedule.js";
 import { analyzeMatchup } from "./js/edge.js";
 import { fetchLiveOdds, mergeOddsIntoSchedule } from "./js/odds.js";
 
@@ -33,8 +33,30 @@ function loadOddsCache() {
 
 function formatSavedAt(iso) {
   if (!iso) return "earlier";
-  const d = new Date(iso);
-  return d.toLocaleString();
+  return new Date(iso).toLocaleString();
+}
+
+function getCoverResult(game) {
+  if (!game.is_final) return "";
+  if (game.home_score == null || game.away_score == null) return "";
+
+  const scoreLine = `${game.away_team} ${game.away_score}, ${game.home_team} ${game.home_score}`;
+
+  if (typeof game.spread_close !== "number") {
+    return scoreLine;
+  }
+
+  const homeMargin = game.home_score + game.spread_close;
+
+  if (homeMargin === game.away_score) {
+    return `${scoreLine} • Push`;
+  }
+
+  if (homeMargin > game.away_score) {
+    return `${scoreLine} • ${game.home_team} covered`;
+  }
+
+  return `${scoreLine} • ${game.away_team} covered`;
 }
 
 async function loadHistorical() {
@@ -100,6 +122,7 @@ function renderGames(games) {
     const favoriteName = game.favorite || "—";
     const spreadDisplay = hasLine ? game.spread_close : "—";
     const totalDisplay = typeof game.total_close === "number" ? game.total_close : "—";
+    const resultText = getCoverResult(game);
 
     const homeClass = favoriteName === game.home_team ? "favorite" : "";
     const awayClass = favoriteName === game.away_team ? "favorite" : "";
@@ -120,6 +143,7 @@ function renderGames(games) {
         <div class="line-item">Line: <strong>${spreadDisplay}</strong></div>
         <div class="line-item">Total: <strong>${totalDisplay}</strong></div>
       </div>
+      ${resultText ? `<div class="result-line">${resultText}</div>` : ""}
       <div class="movement">
         ${hasLine ? `Saved/current line from ${game.bookmaker || "sportsbook"}` : "Live odds + opening line coming later"}
       </div>
@@ -181,8 +205,6 @@ function buildWeekDropdown() {
     weekSelect.appendChild(option);
   }
 
-  weekSelect.value = "2";
-
   weekSelect.addEventListener("change", () => {
     const selectedWeek = parseInt(weekSelect.value, 10);
     loadRealSchedule(selectedWeek);
@@ -193,7 +215,10 @@ async function init() {
   buildWeekDropdown();
   loadOddsBtn.addEventListener("click", loadOdds);
   await loadHistorical();
-  await loadRealSchedule(2);
+
+  const currentWeek = await fetchCurrentWeekNumber();
+  weekSelect.value = String(currentWeek);
+  await loadRealSchedule(currentWeek);
 }
 
 init();
