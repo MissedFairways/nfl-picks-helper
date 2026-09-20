@@ -45,7 +45,7 @@ export function scoreGame(game, historical, sagarinData) {
     const weighted = bucket.points * weights.sagarin;
     if (sag.edgeTeam === game.home_team) home += weighted;
     if (sag.edgeTeam === game.away_team) away += weighted;
-    reasons.push(`Sagarin ${bucket.label} edge ${sag.edgeTeam} (${Math.abs(sag.edgePoints).toFixed(2)})`);
+    reasons.push("Sagarin " + bucket.label + " edge " + sag.edgeTeam + " (" + Math.abs(sag.edgePoints).toFixed(2) + ")");
     if (Math.abs(sag.edgePoints) >= 5) {
       flags.push("Large Sagarin gap — check injuries/news before trusting this");
     }
@@ -61,7 +61,7 @@ export function scoreGame(game, historical, sagarinData) {
       const weighted = bucket.points * weights.movement;
       if (towardHome) home += weighted;
       else away += weighted;
-      reasons.push(`Line ${bucket.label} move toward ${moveTeam} (${game.spread_open} → ${game.spread_close})`);
+      reasons.push("Line " + bucket.label + " move toward " + moveTeam + " (" + game.spread_open + " → " + game.spread_close + ")");
 
       if (sag.edgeTeam && sag.edgeTeam !== moveTeam && absMove >= 2 && Math.abs(sag.edgePoints || 0) >= 3) {
         flags.push("Sagarin and the line move disagree — possible injury or sharp vs public fight");
@@ -78,15 +78,27 @@ export function scoreGame(game, historical, sagarinData) {
     const homeAtHome = historical.filter(g => g.home_team === game.home_team && !g.push);
     if (homeAtHome.length >= MIN_HIST) {
       const rate = homeAtHome.filter(g => g.home_covered).length / homeAtHome.length;
-      if (rate >= 0.55) { homeHist += 1; reasons.push(`${game.home_team} strong at home historically`); }
-      if (rate <= 0.45) { awayHist += 1; reasons.push(`${game.home_team} weak at home historically`); }
+      if (rate >= 0.55) {
+        homeHist += 1;
+        reasons.push(game.home_team + " strong at home historically");
+      }
+      if (rate <= 0.45) {
+        awayHist += 1;
+        reasons.push(game.home_team + " weak at home historically");
+      }
     }
 
     const awayOnRoad = historical.filter(g => g.away_team === game.away_team && !g.push);
     if (awayOnRoad.length >= MIN_HIST) {
       const rate = awayOnRoad.filter(g => g.away_covered).length / awayOnRoad.length;
-      if (rate >= 0.55) { awayHist += 1; reasons.push(`${game.away_team} strong on the road historically`); }
-      if (rate <= 0.45) { homeHist += 1; reasons.push(`${game.away_team} weak on the road historically`); }
+      if (rate >= 0.55) {
+        awayHist += 1;
+        reasons.push(game.away_team + " strong on the road historically");
+      }
+      if (rate <= 0.45) {
+        homeHist += 1;
+        reasons.push(game.away_team + " weak on the road historically");
+      }
     }
 
     if (typeof game.spread_close === "number") {
@@ -108,26 +120,27 @@ export function scoreGame(game, historical, sagarinData) {
     }
   }
 
-  const homeHistScore = histStrength(homeHist) * weights.historical;
-  const awayHistScore = histStrength(awayHist) * weights.historical;
-  home += homeHistScore;
-  away += awayHistScore;
+  home += histStrength(homeHist) * weights.historical;
+  away += histStrength(awayHist) * weights.historical;
   if (homeHist >= 3) reasons.push("All available historical arrows point home");
   if (awayHist >= 3) reasons.push("All available historical arrows point away");
 
-  const total = home + away;
   const pick = home === away ? null : (home > away ? "home" : "away");
   const pickTeam = pick === "home" ? game.home_team : pick === "away" ? game.away_team : null;
   const margin = Math.abs(home - away);
 
   let confidence = "none";
   let units = 0;
-  if (pick && margin >= 1.8) { confidence = "strong"; units = 3; }
-  else if (pick && margin >= 1.1) { confidence = "medium"; units = 2; }
-  else if (pick && margin >= 0.6) { confidence = "small"; units = 1; }
-
-  const homePct = total > 0 ? Math.round(home / total * 100) : 50;
-  const awayPct = 100 - homePct;
+  if (pick && margin >= 1.8) {
+    confidence = "strong";
+    units = 3;
+  } else if (pick && margin >= 1.1) {
+    confidence = "medium";
+    units = 2;
+  } else if (pick && margin >= 0.6) {
+    confidence = "small";
+    units = 1;
+  }
 
   return {
     pick,
@@ -136,12 +149,8 @@ export function scoreGame(game, historical, sagarinData) {
     confidence,
     home,
     away,
-    homePct,
-    awayPct,
     reasons,
     flags,
-    text: pickTeam
-      ? `System: ${pickTeam} (${confidence}, ${units}u)`
-      : "System: no play"
+    text: pickTeam ? ("System: " + pickTeam + " (" + confidence + ", " + units + "u)") : "System: no play"
   };
 }
