@@ -3,6 +3,7 @@ import { analyzeMatchup } from "./js/edge.js";
 import { fetchLiveOdds, mergeOddsIntoSchedule } from "./js/odds.js";
 import { loadSagarin, sagarinForGame } from "./js/sagarin.js";
 import { scoreGame } from "./js/system.js";
+import { fetchInjuries, loadCachedInjuries, formatGameInjuries, shouldHighlightInjuries } from "./js/injuries.js";
 
 const ODDS_CACHE_KEY = "nflPicksOddsCache";
 const LINE_STORE_KEY = "nflPicksLineStore";
@@ -10,6 +11,7 @@ const LINE_STORE_KEY = "nflPicksLineStore";
 let historicalGames = [];
 let currentSchedule = [];
 let sagarinData = null;
+let injurySnapshot = loadCachedInjuries();
 
 const statusMessage = document.getElementById("status-message");
 const recordMessage = document.getElementById("record-message");
@@ -18,6 +20,18 @@ const gamesContainer = document.getElementById("games-container");
 const loadOddsBtn = document.getElementById("load-odds-btn");
 const downloadBtn = document.getElementById("download-snapshot-btn");
 const importInput = document.getElementById("import-snapshot-input");
+
+function getLoadInjuriesBtn() {
+  let btn = document.getElementById("load-injuries-btn");
+  if (btn) return btn;
+  if (!loadOddsBtn || !loadOddsBtn.parentNode) return null;
+  btn = document.createElement("button");
+  btn.id = "load-injuries-btn";
+  btn.type = "button";
+  btn.textContent = "Load injuries";
+  loadOddsBtn.parentNode.insertBefore(btn, loadOddsBtn.nextSibling);
+  return btn;
+}
 
 function saveOddsCache(oddsGames) {
   localStorage.setItem(ODDS_CACHE_KEY, JSON.stringify({
@@ -295,6 +309,8 @@ function renderGames(games) {
     const detailsId = "edge-details-" + index;
     const pickResult = getPickResult(game);
     const resultText = getCoverResult(game);
+    const injuryText = formatGameInjuries(injurySnapshot, game);
+    const injuryClass = shouldHighlightInjuries(system) ? "injury-line injury-flag" : "injury-line";
     card.innerHTML =
       '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + '">' + game.home_team + '</span></div>' +
       '<div class="lines">' +
@@ -311,6 +327,7 @@ function renderGames(games) {
       '<div class="sagarin-line">' + sagarin.note + '</div>' +
       '<div class="historical-line">Historical insight: ' + (edge.leanTeam ? ("EDGE " + edge.leanTeam) : edge.leanText) + '</div>' +
       '<div class="system-line">' + system.text + (system.flags[0] ? " • " + system.flags[0] : "") + '</div>' +
+      '<div class="' + injuryClass + '">Injuries: ' + injuryText + '</div>' +
       '<button class="edge-toggle" type="button" data-target="' + detailsId + '">Edge insights</button>' +
       '<div class="edge-details hidden" id="' + detailsId + '"><div class="edge-lean">' + edge.leanText + '</div><ul class="edge-notes">' + edge.notes.map(n => "<li>" + n + "</li>").join("") + '</ul></div>';
     card.querySelectorAll(".pick-btn").forEach(btn => {
@@ -349,6 +366,25 @@ async function loadOdds() {
   }
 }
 
+async function loadInjuries() {
+  const btn = getLoadInjuriesBtn();
+  if (btn) btn.disabled = true;
+  try {
+    injurySnapshot = await fetchInjuries();
+    renderGames(currentSchedule);
+    statusMessage.textContent = "Injuries loaded from ESPN";
+    statusMessage.style.color = "#4ade80";
+  } catch (error) {
+    statusMessage.textContent = error.message || "Could not load injuries";
+    statusMessage.style.color = "#f87171";
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Load injuries";
+    }
+  }
+}
+
 function buildWeekDropdown() {
   weekSelect.innerHTML = "";
   for (let w = 1; w <= 18; w++) {
@@ -363,6 +399,8 @@ function buildWeekDropdown() {
 async function startApp() {
   buildWeekDropdown();
   loadOddsBtn.addEventListener("click", loadOdds);
+  const injuriesBtn = getLoadInjuriesBtn();
+  if (injuriesBtn) injuriesBtn.addEventListener("click", loadInjuries);
   downloadBtn.addEventListener("click", downloadSnapshot);
   importInput.addEventListener("change", () => {
     if (importInput.files[0]) importSnapshot(importInput.files[0]);
