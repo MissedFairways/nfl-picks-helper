@@ -93,12 +93,6 @@ header h1 {
   gap: 1rem;
 }
 
-.historical-line {
-  margin-top: 0.35rem;
-  font-size: 0.86rem;
-  color: #fbbf24;
-}
-
 .game-card {
   background: #1e293b;
   border: 1px solid #334155;
@@ -111,12 +105,6 @@ header h1 {
   font-weight: 600;
   margin-bottom: 0.7rem;
   color: #f8fafc;
-}
-
-.sagarin-line {
-  margin-top: 0.45rem;
-  font-size: 0.86rem;
-  color: #93c5fd;
 }
 
 .favorite {
@@ -151,14 +139,34 @@ header h1 {
   color: #4ade80;
 }
 
-.pick-status,
-.movement {
-  font-size: 0.85rem;
+.pick-status {
+  font-size: 0.86rem;
   color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.movement,
+.sagarin-line,
+.historical-line {
+  font-size: 0.86rem;
+  line-height: 1.4;
+  margin: 0 0 0.35rem 0;
+}
+
+.movement {
+  color: #cbd5e1;
+}
+
+.sagarin-line {
+  color: #93c5fd;
+}
+
+.historical-line {
+  color: #fbbf24;
 }
 
 .edge-toggle {
-  margin-top: 0.8rem;
+  margin-top: 0.75rem;
   cursor: pointer;
 }
 
