@@ -106,37 +106,46 @@ header h1 {
   color: #94a3b8;
 }
 
-/* Edge Insights */
-.edge-insights {
-  margin-top: 2.5rem;
-  padding: 1.25rem;
-  background: #1e293b;
-  border-radius: 12px;
-  border: 1px solid #334155;
-}
-
-.edge-insights h2 {
-  margin: 0 0 1rem 0;
-  font-size: 1.15rem;
+.edge-toggle {
+  margin-top: 0.8rem;
+  background: #0f172a;
   color: #e2e8f0;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
-.edge-stat {
-  margin-bottom: 0.9rem;
-  padding-bottom: 0.9rem;
-  border-bottom: 1px solid #334155;
-  color: #cbd5e1;
-  line-height: 1.45;
+.edge-toggle:hover {
+  border-color: #94a3b8;
 }
 
-.edge-stat:last-of-type {
-  border-bottom: none;
+.edge-details {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #334155;
 }
 
-.edge-note {
-  margin: 1rem 0 0 0;
-  font-size: 0.85rem;
+.edge-details.hidden {
+  display: none;
+}
+
+.edge-lean {
+  font-weight: 600;
+  color: #f8fafc;
+  margin-bottom: 0.45rem;
+}
+
+.edge-notes {
+  margin: 0;
+  padding-left: 1.1rem;
   color: #94a3b8;
+  font-size: 0.86rem;
+}
+
+.edge-notes li {
+  margin-bottom: 0.25rem;
 }
 
 footer {
