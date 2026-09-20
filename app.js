@@ -1,12 +1,14 @@
 import { fetchSchedule, fetchCurrentWeekNumber } from "./js/schedule.js";
 import { analyzeMatchup } from "./js/edge.js";
 import { fetchLiveOdds, mergeOddsIntoSchedule } from "./js/odds.js";
+import { loadSagarin, sagarinForGame } from "./js/sagarin.js";
 
 const ODDS_CACHE_KEY = "nflPicksOddsCache";
 const LINE_STORE_KEY = "nflPicksLineStore";
 
 let historicalGames = [];
 let currentSchedule = [];
+let sagarinData = null;
 
 const statusMessage = document.getElementById("status-message");
 const recordMessage = document.getElementById("record-message");
@@ -144,7 +146,6 @@ function movementText(game) {
     return `Open ${game.spread_open} → current ${game.spread_close} • no move`;
   }
 
-  // More negative home spread = money toward home
   const towardHome = game.spread_close < game.spread_open;
   const team = towardHome ? game.home_team : game.away_team;
   return `Open ${game.spread_open} → current ${game.spread_close} • moved toward ${team}`;
@@ -349,6 +350,7 @@ function renderGames(games) {
     const homeClass = favoriteName === game.home_team ? "favorite" : "";
     const awayClass = favoriteName === game.away_team ? "favorite" : "";
     const edge = analyzeMatchup(game, historicalGames);
+    const sagarin = sagarinForGame(game, sagarinData);
     const notesHtml = edge.notes.map(n => `<li>${n}</li>`).join("");
     const detailsId = `edge-details-${index}`;
 
@@ -374,6 +376,7 @@ function renderGames(games) {
         ${game.pick ? `Your pick: ${game.pick === "home" ? game.home_team : game.away_team}${pickResult ? " • " + pickResult : ""}` : "No pick yet"}
       </div>
       <div class="movement">${movementText(game)}</div>
+      <div class="sagarin-line">${sagarin.note}</div>
       <button class="edge-toggle" type="button" data-target="${detailsId}">Edge insights</button>
       <div class="edge-details hidden" id="${detailsId}">
         <div class="edge-lean">${edge.leanText}</div>
@@ -433,17 +436,26 @@ function buildWeekDropdown() {
   });
 }
 
-async function init() {
+async function startApp() {
   buildWeekDropdown();
   loadOddsBtn.addEventListener("click", loadOdds);
   downloadBtn.addEventListener("click", downloadSnapshot);
   importInput.addEventListener("change", () => {
     if (importInput.files[0]) importSnapshot(importInput.files[0]);
   });
+
   await loadHistorical();
+
+  try {
+    sagarinData = await loadSagarin();
+  } catch (error) {
+    console.error(error);
+    sagarinData = null;
+  }
+
   const currentWeek = await fetchCurrentWeekNumber();
   weekSelect.value = String(currentWeek);
   await loadRealSchedule(currentWeek);
 }
 
-init();
+startApp();
