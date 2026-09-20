@@ -3,70 +3,23 @@
 */
 
 const INJURIES_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries";
-const INJ_CACHE_KEY = "nflHelper_injuries_v1";
+const INJ_CACHE_KEY = "nflPicksInjuriesCache";
 
-const MAJOR_STATUS = new Set(["out", "doubtful", "injured reserve", "ir", "out for season"]);
-const SKILL_POS = new Set(["QB", "RB", "FB", "WR", "TE", "C", "G", "T", "OT", "OG", "OL", "LT", "RT", "LG", "RG"]);
+const MAJOR_STATUS = new Set([
+  "out",
+  "doubtful",
+  "injured reserve",
+  "ir",
+  "out for season",
+  "injured reserve - designated for return"
+]);
 
-export function loadCachedInjuries() {
-  try {
-    const raw = localStorage.getItem(INJ_CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-export async function fetchInjuries() {
-  const res = await fetch(INJURIES_URL);
-  if (!res.ok) throw new Error("ESPN injuries request failed: " + res.status);
-  const json = await res.json();
-  const parsed = parseEspnInjuries(json);
-  const snapshot = {
-    fetchedAt: new Date().toISOString(),
-    byAbbr: parsed
-  };
-  localStorage.setItem(INJ_CACHE_KEY, JSON.stringify(snapshot));
-  return snapshot;
-}
-
-function parseEspnInjuries(json) {
-  const byAbbr = {};
-  const teams = json.injuries || [];
-  for (const team of teams) {
-    const rows = [];
-    for (const inj of team.injuries || []) {
-      const athlete = inj.athlete || {};
-      const pos = (athlete.position && athlete.position.abbreviation) || "";
-      const status = String(inj.status || "").trim();
-      const statusKey = status.toLowerCase();
-      const name = athlete.displayName || athlete.shortName || "Unknown";
-      const comment = inj.shortComment || inj.longComment || "";
-      rows.push({
-        name,
-        pos,
-        status,
-        statusKey,
-        comment,
-        date: inj.date || ""
-      });
-    }
-    const abbr = guessAbbr(team, rows);
-    if (!abbr) continue;
-    byAbbr[abbr] = rows;
-  }
-  return byAbbr;
-}
-
-function guessAbbr(team, rows) {
-  const fromPlayer = rows.find((r) => false);
-  // ESPN team block usually has displayName only; athlete.team.abbreviation is on each injury
-  const sample = (team.injuries && team.injuries[0] && team.injuries[0].athlete && team.injuries[0].athlete.team) || {};
-  if (sample.abbreviation) return String(sample.abbreviation).toUpperCase();
-  const name = String(team.displayName || "").toLowerCase();
-  return NAME_TO_ABBR[name] || null;
-}
+const SKILL_POS = new Set([
+  "QB", "RB", "FB", "WR", "TE",
+  "C", "G", "T", "OT", "OG", "OL", "LT", "RT", "LG", "RG",
+  "DE", "DT", "NT", "LB", "OLB", "ILB", "MLB", "EDGE",
+  "CB", "S", "FS", "SS", "DB"
+]);
 
 const NAME_TO_ABBR = {
   "arizona cardinals": "ARI",
@@ -103,20 +56,128 @@ const NAME_TO_ABBR = {
   "washington commanders": "WAS"
 };
 
-export function majorInjuriesForTeam(snapshot, abbr) {
-  if (!snapshot || !snapshot.byAbbr || !abbr) return [];
-  const rows = snapshot.byAbbr[String(abbr).toUpperCase()] || [];
-  return rows.filter((r) => {
-    if (MAJOR_STATUS.has(r.statusKey)) return true;
-    if (r.statusKey === "questionable" && SKILL_POS.has(r.pos)) return true;
-    return false;
-  });
+const ALIAS_TO_ABBR = {
+  ARI: "ARI", ARZ: "ARI",
+  ATL: "ATL",
+  BAL: "BAL",
+  BUF: "BUF",
+  CAR: "CAR",
+  CHI: "CHI",
+  CIN: "CIN",
+  CLE: "CLE",
+  DAL: "DAL",
+  DEN: "DEN",
+  DET: "DET",
+  GB: "GB", GNB: "GB",
+  HOU: "HOU",
+  IND: "IND",
+  JAX: "JAX", JAC: "JAX",
+  KC: "KC", KAN: "KC",
+  LV: "LV", LAS: "LV", OAK: "LV",
+  LAC: "LAC",
+  LAR: "LAR", LA: "LAR", STL: "LAR",
+  MIA: "MIA",
+  MIN: "MIN",
+  NE: "NE", NWE: "NE",
+  NO: "NO", NOR: "NO",
+  NYG: "NYG",
+  NYJ: "NYJ",
+  PHI: "PHI",
+  PIT: "PIT",
+  SF: "SF", SFO: "SF",
+  SEA: "SEA",
+  TB: "TB", TAM: "TB",
+  TEN: "TEN",
+  WAS: "WAS", WSH: "WAS", WFT: "WAS"
+};
+
+export function normalizeAbbr(value) {
+  if (!value) return "";
+  const raw = String(value).trim().toUpperCase();
+  if (ALIAS_TO_ABBR[raw]) return ALIAS_TO_ABBR[raw];
+  const fromName = NAME_TO_ABBR[String(value).trim().toLowerCase()];
+  return fromName || raw;
 }
 
-export function formatInjuryLine(rows) {
-  if (!rows || !rows.length) return "No major listed injuries";
-  return rows
-    .slice(0, 8)
-    .map((r) => `${r.name} (${r.pos || "?"}) ${r.status}`)
-    .join(" · ");
+export function loadCachedInjuries() {
+  try {
+    const raw = localStorage.getItem(INJ_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function fetchInjuries() {
+  const res = await fetch(INJURIES_URL);
+  if (!res.ok) throw new Error("ESPN injuries request failed: " + res.status);
+  const json = await res.json();
+  const snapshot = {
+    fetchedAt: new Date().toISOString(),
+    season: json.season || null,
+    byAbbr: parseEspnInjuries(json)
+  };
+  localStorage.setItem(INJ_CACHE_KEY, JSON.stringify(snapshot));
+  return snapshot;
+}
+
+function parseEspnInjuries(json) {
+  const byAbbr = {};
+  const teams = json.injuries || [];
+  teams.forEach(team => {
+    const rows = (team.injuries || []).map(inj => {
+      const athlete = inj.athlete || {};
+      const teamInfo = athlete.team || {};
+      return {
+        name: athlete.displayName || athlete.shortName || "Unknown",
+        pos: (athlete.position && athlete.position.abbreviation) || "",
+        status: String(inj.status || "").trim(),
+        statusKey: String(inj.status || "").trim().toLowerCase(),
+        comment: inj.shortComment || "",
+        date: inj.date || "",
+        abbr: normalizeAbbr(teamInfo.abbreviation || "")
+      };
+    });
+    let abbr = "";
+    const withAbbr = rows.find(r => r.abbr);
+    if (withAbbr) abbr = withAbbr.abbr;
+    if (!abbr) abbr = normalizeAbbr(team.displayName || team.id || "");
+    if (!abbr) return;
+    byAbbr[abbr] = rows.map(r => ({ ...r, abbr }));
+  });
+  return byAbbr;
+}
+
+export function isMajorInjury(row) {
+  if (!row) return false;
+  if (MAJOR_STATUS.has(row.statusKey)) return true;
+  if (row.statusKey === "questionable" && SKILL_POS.has(row.pos)) return true;
+  return false;
+}
+
+export function majorInjuriesForTeam(snapshot, teamNameOrAbbr) {
+  if (!snapshot || !snapshot.byAbbr) return [];
+  const abbr = normalizeAbbr(teamNameOrAbbr);
+  const rows = snapshot.byAbbr[abbr] || [];
+  return rows.filter(isMajorInjury);
+}
+
+export function formatTeamInjuries(snapshot, teamNameOrAbbr) {
+  const rows = majorInjuriesForTeam(snapshot, teamNameOrAbbr);
+  if (!rows.length) return "none listed";
+  return rows.slice(0, 6).map(r => r.name + " " + (r.pos || "?") + " " + r.status).join("; ");
+}
+
+export function formatGameInjuries(snapshot, game) {
+  if (!snapshot) return "Injuries not loaded. Click Load injuries.";
+  const away = formatTeamInjuries(snapshot, game.away_team);
+  const home = formatTeamInjuries(snapshot, game.home_team);
+  const when = snapshot.fetchedAt ? new Date(snapshot.fetchedAt).toLocaleString() : "";
+  return (game.away_team + ": " + away + " | " + game.home_team + ": " + home) + (when ? " • " + when : "");
+}
+
+export function shouldHighlightInjuries(system) {
+  const flags = (system && system.flags) ? system.flags.join(" ").toLowerCase() : "";
+  const text = ((system && system.text) || "").toLowerCase();
+  return flags.includes("injur") || flags.includes("news") || text.includes("check injuries");
 }
