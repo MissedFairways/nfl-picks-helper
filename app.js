@@ -23,17 +23,26 @@ const importInput = document.getElementById("import-snapshot-input");
 
 function getLoadInjuriesBtn() {
   let btn = document.getElementById("load-injuries-btn");
-  if (btn) {
-    btn.className = loadOddsBtn ? loadOddsBtn.className : "edge-toggle";
-    return btn;
+  if (!btn) {
+    if (!loadOddsBtn || !loadOddsBtn.parentNode) return null;
+    btn = document.createElement("button");
+    btn.id = "load-injuries-btn";
+    btn.type = "button";
+    loadOddsBtn.parentNode.insertBefore(btn, loadOddsBtn.nextSibling);
   }
-  if (!loadOddsBtn || !loadOddsBtn.parentNode) return null;
-  btn = document.createElement("button");
-  btn.id = "load-injuries-btn";
-  btn.type = "button";
-  btn.className = loadOddsBtn.className || "edge-toggle";
-  btn.textContent = "Load injuries";
-  loadOddsBtn.parentNode.insertBefore(btn, loadOddsBtn.nextSibling);
+  if (loadOddsBtn) {
+    btn.className = loadOddsBtn.className;
+    const cs = window.getComputedStyle(loadOddsBtn);
+    btn.style.margin = cs.margin;
+    btn.style.padding = cs.padding;
+    btn.style.height = cs.height;
+    btn.style.lineHeight = cs.lineHeight;
+    btn.style.display = cs.display;
+    btn.style.verticalAlign = "middle";
+    btn.style.position = "relative";
+    btn.style.top = "0";
+  }
+  if (!btn.textContent) btn.textContent = "Load injuries";
   return btn;
 }
 
