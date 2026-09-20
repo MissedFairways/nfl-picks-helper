@@ -41,7 +41,7 @@ const TEAM_ABBR = {
   "Seattle Seahawks": "SEA",
   "Tampa Bay Buccaneers": "TB",
   "Tennessee Titans": "TEN",
-  "Washington Commanders": "WAS"
+  "Washington Commanders": "WSH"
 };
 
 export async function fetchLiveOdds() {
