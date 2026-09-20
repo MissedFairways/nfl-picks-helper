@@ -1,11 +1,6 @@
-// ======================
-// LIVE ODDS TEMPORARILY TURNED OFF
-// ======================
-// const ODDS_API_KEY = "YOUR_KEY_HERE";   // kept for later
-// ======================
-
 import { fetchSchedule } from "./js/schedule.js";
 import { analyzeMatchup } from "./js/edge.js";
+import { fetchLiveOdds, mergeOddsIntoSchedule } from "./js/odds.js";
 
 let historicalGames = [];
 let currentSchedule = [];
@@ -13,6 +8,7 @@ let currentSchedule = [];
 const statusMessage = document.getElementById("status-message");
 const weekSelect = document.getElementById("week-select");
 const gamesContainer = document.getElementById("games-container");
+const loadOddsBtn = document.getElementById("load-odds-btn");
 
 async function loadHistorical() {
   try {
@@ -41,7 +37,7 @@ async function loadRealSchedule(week = null) {
   const season = currentSchedule[0]?.season ?? "????";
   const weekNum = currentSchedule[0]?.week ?? "?";
 
-  statusMessage.textContent = `Real schedule loaded — ${season} Week ${weekNum} (${currentSchedule.length} games) • live odds still off`;
+  statusMessage.textContent = `Real schedule loaded — ${season} Week ${weekNum} (${currentSchedule.length} games) • live odds off until you click the button`;
   statusMessage.style.color = "#4ade80";
 
   renderGames(currentSchedule);
@@ -63,22 +59,32 @@ function renderGames(games) {
     if (game.is_final) statusText = "Final";
     else if (game.is_in_progress) statusText = "In Progress";
 
+    const hasLine = typeof game.spread_close === "number";
+    const favoriteName = game.favorite || "—";
+    const spreadDisplay = hasLine ? game.spread_close : "—";
+    const totalDisplay = typeof game.total_close === "number" ? game.total_close : "—";
+
+    const homeClass = favoriteName === game.home_team ? "favorite" : "";
+    const awayClass = favoriteName === game.away_team ? "favorite" : "";
+
     const edge = analyzeMatchup(game, historicalGames);
     const notesHtml = edge.notes.map(n => `<li>${n}</li>`).join("");
     const detailsId = `edge-details-${index}`;
 
     card.innerHTML = `
       <div class="matchup">
-        ${game.away_team} @ ${game.home_team}
+        <span class="${awayClass}">${game.away_team}</span>
+        @
+        <span class="${homeClass}">${game.home_team}</span>
       </div>
       <div class="lines">
         <div class="line-item">Status: <strong>${statusText}</strong></div>
-        <div class="line-item">Favorite: <strong>—</strong></div>
-        <div class="line-item">Line: <strong>—</strong></div>
-        <div class="line-item">Total: <strong>—</strong></div>
+        <div class="line-item">Favorite: <strong>${favoriteName}</strong></div>
+        <div class="line-item">Line: <strong>${spreadDisplay}</strong></div>
+        <div class="line-item">Total: <strong>${totalDisplay}</strong></div>
       </div>
       <div class="movement">
-        Live odds + opening line coming later
+        ${hasLine ? `Current line from ${game.bookmaker || "sportsbook"}` : "Live odds + opening line coming later"}
       </div>
       <button class="edge-toggle" type="button" data-target="${detailsId}">
         Edge insights
@@ -104,6 +110,30 @@ function renderGames(games) {
   });
 }
 
+async function loadOdds() {
+  loadOddsBtn.disabled = true;
+  loadOddsBtn.textContent = "Loading odds...";
+  statusMessage.textContent = "Requesting live odds (this uses API quota)...";
+  statusMessage.style.color = "#fbbf24";
+
+  try {
+    const oddsGames = await fetchLiveOdds();
+    currentSchedule = mergeOddsIntoSchedule(currentSchedule, oddsGames);
+    renderGames(currentSchedule);
+
+    const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
+    statusMessage.textContent = `Live odds loaded for ${matched} game(s). Quota used for this click only.`;
+    statusMessage.style.color = "#4ade80";
+  } catch (error) {
+    console.error(error);
+    statusMessage.textContent = error.message;
+    statusMessage.style.color = "#f87171";
+  } finally {
+    loadOddsBtn.disabled = false;
+    loadOddsBtn.textContent = "Load live odds";
+  }
+}
+
 function buildWeekDropdown() {
   weekSelect.innerHTML = "";
   for (let w = 1; w <= 18; w++) {
@@ -123,6 +153,7 @@ function buildWeekDropdown() {
 
 async function init() {
   buildWeekDropdown();
+  loadOddsBtn.addEventListener("click", loadOdds);
   await loadHistorical();
   await loadRealSchedule(2);
 }
