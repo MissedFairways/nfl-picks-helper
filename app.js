@@ -33,12 +33,9 @@ function getLoadInjuriesBtn() {
   if (loadOddsBtn) {
     btn.className = loadOddsBtn.className;
     const cs = window.getComputedStyle(loadOddsBtn);
-    btn.style.margin = cs.margin;
-    btn.style.padding = cs.padding;
-    btn.style.height = cs.height;
-    btn.style.lineHeight = cs.lineHeight;
-    btn.style.display = cs.display;
-    btn.style.verticalAlign = "middle";
+    ["margin","padding","height","lineHeight","display","verticalAlign","background","backgroundColor","color","border","borderRadius","font","fontSize","fontWeight","letterSpacing","textTransform","boxShadow","cursor"].forEach(function(prop) {
+      btn.style[prop] = cs[prop];
+    });
     btn.style.position = "relative";
     btn.style.top = "0";
   }
