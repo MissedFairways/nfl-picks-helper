@@ -5,23 +5,27 @@
 // ======================
 
 import { fetchSchedule } from "./js/schedule.js";
+import { homeDogsUnder, underdogsUnder, homeFavoritesOver } from "./js/edge.js";
 
-let historicalGames = [];   // kept for future edge analysis
-let currentSchedule = [];   // real games for the selected week
+let historicalGames = [];
+let currentSchedule = [];
 
 const statusMessage = document.getElementById("status-message");
 const weekSelect = document.getElementById("week-select");
 const gamesContainer = document.getElementById("games-container");
+const edgeBox = document.getElementById("edge-box");
 
-// ---------- Historical (background only) ----------
+// ---------- Historical (background + edge analysis) ----------
 async function loadHistorical() {
   try {
     const response = await fetch("data/historical.json");
     if (!response.ok) throw new Error("Could not load historical.json");
     historicalGames = await response.json();
-    console.log(`Historical data loaded (${historicalGames.length} games) — available for edge analysis`);
+    console.log(`Historical data loaded (${historicalGames.length} games)`);
+    renderEdgeInsights();
   } catch (error) {
     console.error("Historical load failed:", error);
+    edgeBox.innerHTML = `<p style="color:#f87171">Could not load historical data for edge analysis</p>`;
   }
 }
 
@@ -33,7 +37,7 @@ async function loadRealSchedule(week = null) {
   currentSchedule = await fetchSchedule(week);
 
   if (currentSchedule.length === 0) {
-    statusMessage.textContent = "Could not load schedule (check console)";
+    statusMessage.textContent = "Could not load schedule";
     statusMessage.style.color = "#f87171";
     gamesContainer.innerHTML = `<p style="color:#94a3b8">No games found</p>`;
     return;
@@ -48,7 +52,7 @@ async function loadRealSchedule(week = null) {
   renderGames(currentSchedule);
 }
 
-// ---------- Render cards ----------
+// ---------- Render game cards ----------
 function renderGames(games) {
   gamesContainer.innerHTML = "";
 
@@ -61,7 +65,6 @@ function renderGames(games) {
     const card = document.createElement("div");
     card.className = "game-card";
 
-    // Simple status badge
     let statusText = "Scheduled";
     if (game.is_final) statusText = "Final";
     else if (game.is_in_progress) statusText = "In Progress";
@@ -84,9 +87,36 @@ function renderGames(games) {
   });
 }
 
+// ---------- Edge Insights ----------
+function renderEdgeInsights() {
+  if (!historicalGames || historicalGames.length === 0) {
+    edgeBox.innerHTML = `<p>No historical data available</p>`;
+    return;
+  }
+
+  const homeDogs = homeDogsUnder(historicalGames, 7);
+  const allDogs = underdogsUnder(historicalGames, 7);
+  const bigHomeFavs = homeFavoritesOver(historicalGames, 7);
+
+  edgeBox.innerHTML = `
+    <div class="edge-stat">
+      <strong>Home dogs ≤ 7</strong><br>
+      ${homeDogs.covers} covers out of ${homeDogs.total} games → <strong>${homeDogs.rate ?? "n/a"}%</strong>
+    </div>
+    <div class="edge-stat">
+      <strong>All underdogs ≤ 7</strong><br>
+      ${allDogs.covers} covers out of ${allDogs.total} games → <strong>${allDogs.rate ?? "n/a"}%</strong>
+    </div>
+    <div class="edge-stat">
+      <strong>Home favorites ≥ 7</strong><br>
+      ${bigHomeFavs.covers} covers out of ${bigHomeFavs.total} games → <strong>${bigHomeFavs.rate ?? "n/a"}%</strong>
+    </div>
+    <p class="edge-note">Based on small 2024 sample only. More data will improve these numbers.</p>
+  `;
+}
+
 // ---------- Week dropdown ----------
 function buildWeekDropdown() {
-  // Simple 1–18 dropdown for now (true NFL weeks)
   weekSelect.innerHTML = "";
   for (let w = 1; w <= 18; w++) {
     const option = document.createElement("option");
@@ -95,8 +125,6 @@ function buildWeekDropdown() {
     weekSelect.appendChild(option);
   }
 
-  // Default to current week (ESPN will return whatever is current if we pass null,
-  // but for the dropdown we start on week 2 since that’s where we are today)
   weekSelect.value = "2";
 
   weekSelect.addEventListener("change", () => {
@@ -108,8 +136,8 @@ function buildWeekDropdown() {
 // ---------- Start ----------
 async function init() {
   buildWeekDropdown();
-  await loadHistorical();          // background only
-  await loadRealSchedule(2);       // start on current week
+  await loadHistorical();
+  await loadRealSchedule(2);
 }
 
 init();
