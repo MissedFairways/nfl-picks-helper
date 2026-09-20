@@ -1,11 +1,12 @@
 /* js/injuries.js
    ESPN league injury report. Load on click. Cache in localStorage.
+   Saturday-evening filter: line-moving statuses and positions only.
 */
 
 const INJURIES_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries";
 const INJ_CACHE_KEY = "nflPicksInjuriesCache";
 
-const MAJOR_STATUS = new Set([
+const MUST_SHOW_STATUS = new Set([
   "out",
   "doubtful",
   "injured reserve",
@@ -14,12 +15,29 @@ const MAJOR_STATUS = new Set([
   "injured reserve - designated for return"
 ]);
 
-const SKILL_POS = new Set([
-  "QB", "RB", "FB", "WR", "TE",
-  "C", "G", "T", "OT", "OG", "OL", "LT", "RT", "LG", "RG",
-  "DE", "DT", "NT", "LB", "OLB", "ILB", "MLB", "EDGE",
-  "CB", "S", "FS", "SS", "DB"
+const LINE_POS = new Set([
+  "QB",
+  "RB",
+  "FB",
+  "WR",
+  "TE",
+  "T",
+  "OT",
+  "LT",
+  "RT"
 ]);
+
+const POS_RANK = {
+  QB: 1,
+  RB: 2,
+  WR: 3,
+  TE: 4,
+  T: 5,
+  OT: 5,
+  LT: 5,
+  RT: 5,
+  FB: 6
+};
 
 const NAME_TO_ABBR = {
   "arizona cardinals": "ARI",
@@ -150,22 +168,37 @@ function parseEspnInjuries(json) {
 
 export function isMajorInjury(row) {
   if (!row) return false;
-  if (MAJOR_STATUS.has(row.statusKey)) return true;
-  if (row.statusKey === "questionable" && SKILL_POS.has(row.pos)) return true;
+  const pos = String(row.pos || "").toUpperCase();
+  if (!LINE_POS.has(pos)) return false;
+  if (MUST_SHOW_STATUS.has(row.statusKey)) return true;
+  if (row.statusKey === "questionable") return true;
   return false;
+}
+
+function sortMajor(a, b) {
+  const statusRank = (row) => {
+    if (row.statusKey === "out" || row.statusKey === "out for season") return 1;
+    if (row.statusKey === "doubtful") return 2;
+    if (row.statusKey.indexOf("ir") !== -1 || row.statusKey.indexOf("injured reserve") !== -1) return 3;
+    if (row.statusKey === "questionable") return 4;
+    return 5;
+  };
+  const s = statusRank(a) - statusRank(b);
+  if (s !== 0) return s;
+  return (POS_RANK[a.pos] || 9) - (POS_RANK[b.pos] || 9);
 }
 
 export function majorInjuriesForTeam(snapshot, teamNameOrAbbr) {
   if (!snapshot || !snapshot.byAbbr) return [];
   const abbr = normalizeAbbr(teamNameOrAbbr);
   const rows = snapshot.byAbbr[abbr] || [];
-  return rows.filter(isMajorInjury);
+  return rows.filter(isMajorInjury).sort(sortMajor).slice(0, 4);
 }
 
 export function formatTeamInjuries(snapshot, teamNameOrAbbr) {
   const rows = majorInjuriesForTeam(snapshot, teamNameOrAbbr);
-  if (!rows.length) return "none listed";
-  return rows.slice(0, 6).map(r => r.name + " " + (r.pos || "?") + " " + r.status).join("; ");
+  if (!rows.length) return "none that should move the line";
+  return rows.map(r => r.name + " " + (r.pos || "?") + " " + r.status).join("; ");
 }
 
 export function formatGameInjuries(snapshot, game) {
