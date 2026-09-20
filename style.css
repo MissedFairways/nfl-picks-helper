@@ -93,6 +93,12 @@ header h1 {
   gap: 1rem;
 }
 
+.historical-line {
+  margin-top: 0.35rem;
+  font-size: 0.86rem;
+  color: #fbbf24;
+}
+
 .game-card {
   background: #1e293b;
   border: 1px solid #334155;
