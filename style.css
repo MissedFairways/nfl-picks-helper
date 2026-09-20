@@ -1,116 +1,152 @@
+/* ======================
+   NFL Picks Helper
+   Complete stylesheet
+   ====================== */
+
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #0f172a;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0f172a;
   color: #e2e8f0;
   line-height: 1.5;
   min-height: 100vh;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 2rem 1.25rem;
+  padding: 1.5rem 1rem 3rem;
 }
 
 header {
-  text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-h1 {
-  font-size: 2rem;
-  font-weight: 700;
+header h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
   color: #f8fafc;
-  margin-bottom: 0.3rem;
 }
 
 .subtitle {
   color: #94a3b8;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .controls {
+  margin-bottom: 1rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
 }
 
 .controls label {
-  font-weight: 500;
   color: #cbd5e1;
 }
 
 #week-select {
-  background-color: #1e293b;
-  color: #f1f5f9;
+  background: #1e293b;
+  color: #f8fafc;
   border: 1px solid #334155;
   border-radius: 8px;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.7rem;
   font-size: 1rem;
 }
 
 .status-box {
-  background-color: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 0.9rem 1.1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+}
+
+#status-message {
+  color: #94a3b8;
 }
 
 .games-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .game-card {
-  background-color: #1e293b;
+  background: #1e293b;
   border: 1px solid #334155;
   border-radius: 12px;
-  padding: 1.1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  padding: 1rem 1.1rem;
 }
 
 .matchup {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #f1f5f9;
+  margin-bottom: 0.7rem;
+  color: #f8fafc;
 }
 
 .favorite {
-  color: #38bdf8;
+  color: #4ade80;
 }
 
 .lines {
-  display: flex;
-  gap: 1.5rem;
-  font-size: 0.95rem;
-  color: #94a3b8;
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.7rem;
+  color: #cbd5e1;
 }
 
 .line-item strong {
-  color: #e2e8f0;
-  font-weight: 500;
+  color: #f8fafc;
 }
 
 .movement {
-  font-size: 0.9rem;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+/* Edge Insights */
+.edge-insights {
+  margin-top: 2.5rem;
+  padding: 1.25rem;
+  background: #1e293b;
+  border-radius: 12px;
+  border: 1px solid #334155;
+}
+
+.edge-insights h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.15rem;
+  color: #e2e8f0;
+}
+
+.edge-stat {
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid #334155;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.edge-stat:last-of-type {
+  border-bottom: none;
+}
+
+.edge-note {
+  margin: 1rem 0 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
 }
 
 footer {
-  text-align: center;
-  margin-top: 3rem;
+  margin-top: 2.5rem;
   color: #64748b;
   font-size: 0.85rem;
+}
+
+@media (min-width: 700px) {
+  .games-container {
+    grid-template-columns: 1fr 1fr;
+  }
 }
