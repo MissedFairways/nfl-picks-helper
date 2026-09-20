@@ -421,7 +421,7 @@ function renderSystemBoard(games) {
   const items = scored.map((row, i) => {
     const g = row.game;
     const s = row.system;
-    return "<li>" + (i + 1) + ". " + g.away_team + " @ " + g.home_team + " — " + s.pickTeam + " " + s.margin.toFixed(2) + " (" + s.confidence + ", " + s.units + "u)</li>";
+    return "<li>" + g.away_team + " @ " + g.home_team + " — " + s.pickTeam + " " + s.margin.toFixed(2) + " (" + s.confidence + ", " + s.units + "u)</li>";
   }).join("");
   board.innerHTML = "<strong>System plays (strongest first)</strong><ol>" + items + "</ol>";
   return board;
@@ -466,7 +466,7 @@ function renderGames(games) {
     const injuryText = formatGameInjuries(injurySnapshot, game);
     const injuryLabel = shouldHighlightInjuries(system) ? "Injuries (check)" : "Injuries";
     card.innerHTML =
-      '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + (game.pick === "away" ? " picked-team" : "") + '" style="color:' + (game.pick === "away" ? "#22c55e" : "#111111") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + (game.pick === "home" ? " picked-team" : "") + '" style="color:' + (game.pick === "home" ? "#22c55e" : "#111111") + '">' + game.home_team + '</span></div>' +
+      '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + (game.pick === "away" ? " picked-team" : "") + '" style="color:' + (game.pick === "away" ? "#4ade80" : "#e5e7eb") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + (game.pick === "home" ? " picked-team" : "") + '" style="color:' + (game.pick === "home" ? "#4ade80" : "#e5e7eb") + '">' + game.home_team + '</span></div>' +
       '<div class="lines">' +
       '<div class="line-item">Status: <strong>' + statusText + '</strong></div>' +
       '<div class="line-item">Favorite: <strong>' + favoriteName + '</strong></div>' +
@@ -477,7 +477,7 @@ function renderGames(games) {
       (resultText ? '<div class="result-line">' + resultText + '</div>' : '') +
       '<div class="pick-row"><button class="pick-btn' + (game.pick === "away" ? " active" : "") + '" data-side="away">Pick ' + game.away_team + '</button><button class="pick-btn' + (game.pick === "home" ? " active" : "") + '" data-side="home">Pick ' + game.home_team + '</button></div>' +
       '<div class="pick-status">' + (game.pick ? ("Your pick: " + (game.pick === "home" ? game.home_team : game.away_team) + (pickResult ? " • " + pickResult : "")) : "No pick yet") + '</div>' +
-      (game.pick ? ('<div class="stake-row">To win $ <input class="stake-input" type="number" min="1" step="10" value="' + (typeof game.target_win === "number" ? game.target_win : "") + '"> • Risk ' + (typeof game.stake === "number" ? money(game.stake) : "$0.00") + ' (win pays ' + (typeof game.stake === "number" && typeof game.target_win === "number" ? money(game.stake + game.target_win) : "$0.00") + ')</div>') : '') +
+      (game.pick ? ('<div class="stake-row" style="margin:10px 0;font-size:16px;line-height:1.4">To win $<br><input class="stake-input" type="number" inputmode="decimal" min="1" step="10" value="' + (typeof game.target_win === "number" ? game.target_win : "") + '" style="width:100%;max-width:220px;min-height:44px;font-size:16px;padding:8px 10px;box-sizing:border-box"> <div>Risk ' + (typeof game.stake === "number" ? money(game.stake) : "$0.00") + ' (win pays ' + (typeof game.stake === "number" && typeof game.target_win === "number" ? money(game.stake + game.target_win) : "$0.00") + ')</div></div>') : '') +
       '<div class="movement">' + movementText(game) + '</div>' +
       '<div class="sagarin-line">' + sagarin.note + '</div>' +
       '<div class="historical-line">Historical insight: ' + (edge.leanTeam ? ("EDGE " + edge.leanTeam) : edge.leanText) + '</div>' +
