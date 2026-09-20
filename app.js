@@ -4,98 +4,112 @@
 // const ODDS_API_KEY = "YOUR_KEY_HERE";   // kept for later
 // ======================
 
-let historicalGames = [];
+import { fetchSchedule } from "./js/schedule.js";
 
+let historicalGames = [];   // kept for future edge analysis
+let currentSchedule = [];   // real games for the selected week
+
+const statusMessage = document.getElementById("status-message");
+const weekSelect = document.getElementById("week-select");
+const gamesContainer = document.getElementById("games-container");
+
+// ---------- Historical (background only) ----------
 async function loadHistorical() {
-  const statusMessage = document.getElementById("status-message");
-  const weekSelect = document.getElementById("week-select");
-
   try {
     const response = await fetch("data/historical.json");
     if (!response.ok) throw new Error("Could not load historical.json");
-
     historicalGames = await response.json();
-
-    statusMessage.textContent = `Historical data loaded (${historicalGames.length} games) — live odds currently turned off`;
-    statusMessage.style.color = "#4ade80";
-
-    // Build week dropdown from historical data
-    const weeks = [...new Set(historicalGames.map(g => `Week ${g.week} (${g.season})`))].sort();
-    
-    weekSelect.innerHTML = "";
-    weeks.forEach(weekLabel => {
-      const option = document.createElement("option");
-      option.value = weekLabel;
-      option.textContent = weekLabel;
-      weekSelect.appendChild(option);
-    });
-
-    if (weeks.length > 0) {
-      weekSelect.value = weeks[0];
-      renderGames(weeks[0]);
-    }
-
-    weekSelect.addEventListener("change", () => {
-      renderGames(weekSelect.value);
-    });
-
+    console.log(`Historical data loaded (${historicalGames.length} games) — available for edge analysis`);
   } catch (error) {
-    console.error(error);
-    statusMessage.textContent = "Error loading historical data";
-    statusMessage.style.color = "#f87171";
+    console.error("Historical load failed:", error);
   }
 }
 
-function renderGames(weekLabel) {
-  const container = document.getElementById("games-container");
-  container.innerHTML = "";
+// ---------- Real Schedule ----------
+async function loadRealSchedule(week = null) {
+  statusMessage.textContent = "Loading real NFL schedule...";
+  statusMessage.style.color = "#94a3b8";
 
-  const match = weekLabel.match(/Week (\d+) \((\d+)\)/);
-  if (!match) return;
+  currentSchedule = await fetchSchedule(week);
 
-  const weekNum = parseInt(match[1]);
-  const season = parseInt(match[2]);
-
-  const filtered = historicalGames.filter(g => g.week === weekNum && g.season === season);
-
-  if (filtered.length === 0) {
-    container.innerHTML = `<p style="color:#94a3b8">No games found for this week</p>`;
+  if (currentSchedule.length === 0) {
+    statusMessage.textContent = "Could not load schedule (check console)";
+    statusMessage.style.color = "#f87171";
+    gamesContainer.innerHTML = `<p style="color:#94a3b8">No games found</p>`;
     return;
   }
 
-  filtered.forEach(game => {
-    // Determine favorite
-    let favoriteName = "Pick'em";
-    let spreadDisplay = "0";
+  const season = currentSchedule[0]?.season ?? "????";
+  const weekNum = currentSchedule[0]?.week ?? "?";
 
-    if (game.spread < 0) {
-      favoriteName = game.home_team;
-      spreadDisplay = game.spread;
-    } else if (game.spread > 0) {
-      favoriteName = game.away_team;
-      spreadDisplay = -game.spread;
-    }
+  statusMessage.textContent = `Real schedule loaded — ${season} Week ${weekNum} (${currentSchedule.length} games) • live odds still off`;
+  statusMessage.style.color = "#4ade80";
 
+  renderGames(currentSchedule);
+}
+
+// ---------- Render cards ----------
+function renderGames(games) {
+  gamesContainer.innerHTML = "";
+
+  if (!games || games.length === 0) {
+    gamesContainer.innerHTML = `<p style="color:#94a3b8">No games found for this week</p>`;
+    return;
+  }
+
+  games.forEach(game => {
     const card = document.createElement("div");
     card.className = "game-card";
 
+    // Simple status badge
+    let statusText = "Scheduled";
+    if (game.is_final) statusText = "Final";
+    else if (game.is_in_progress) statusText = "In Progress";
+
     card.innerHTML = `
       <div class="matchup">
-        ${game.away_team} @ <span class="${favoriteName === game.home_team ? 'favorite' : ''}">${game.home_team}</span>
+        ${game.away_team} @ ${game.home_team}
       </div>
       <div class="lines">
-        <div class="line-item">Favorite: <strong>${favoriteName}</strong></div>
-        <div class="line-item">Line: <strong>${spreadDisplay}</strong></div>
-        <div class="line-item">Total: <strong>${game.total}</strong></div>
+        <div class="line-item">Status: <strong>${statusText}</strong></div>
+        <div class="line-item">Favorite: <strong>—</strong></div>
+        <div class="line-item">Line: <strong>—</strong></div>
+        <div class="line-item">Total: <strong>—</strong></div>
       </div>
       <div class="movement">
         Live odds + opening line coming later
       </div>
     `;
-
-    container.appendChild(card);
+    gamesContainer.appendChild(card);
   });
 }
 
-// Start
-loadHistorical();
+// ---------- Week dropdown ----------
+function buildWeekDropdown() {
+  // Simple 1–18 dropdown for now (true NFL weeks)
+  weekSelect.innerHTML = "";
+  for (let w = 1; w <= 18; w++) {
+    const option = document.createElement("option");
+    option.value = w;
+    option.textContent = `Week ${w}`;
+    weekSelect.appendChild(option);
+  }
+
+  // Default to current week (ESPN will return whatever is current if we pass null,
+  // but for the dropdown we start on week 2 since that’s where we are today)
+  weekSelect.value = "2";
+
+  weekSelect.addEventListener("change", () => {
+    const selectedWeek = parseInt(weekSelect.value, 10);
+    loadRealSchedule(selectedWeek);
+  });
+}
+
+// ---------- Start ----------
+async function init() {
+  buildWeekDropdown();
+  await loadHistorical();          // background only
+  await loadRealSchedule(2);       // start on current week
+}
+
+init();
