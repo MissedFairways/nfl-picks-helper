@@ -19,10 +19,16 @@
         <option value="">Loading weeks...</option>
       </select>
       <button id="load-odds-btn" type="button">Load live odds</button>
+      <button id="download-snapshot-btn" type="button">Download snapshot</button>
+      <label class="import-label">
+        Import snapshot
+        <input id="import-snapshot-input" type="file" accept=".csv">
+      </label>
     </section>
 
     <section class="status-box">
       <p id="status-message">Loading data...</p>
+      <p id="record-message"></p>
     </section>
 
     <section id="games-container" class="games-container">
