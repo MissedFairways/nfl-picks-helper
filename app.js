@@ -23,11 +23,15 @@ const importInput = document.getElementById("import-snapshot-input");
 
 function getLoadInjuriesBtn() {
   let btn = document.getElementById("load-injuries-btn");
-  if (btn) return btn;
+  if (btn) {
+    btn.className = loadOddsBtn ? loadOddsBtn.className : "edge-toggle";
+    return btn;
+  }
   if (!loadOddsBtn || !loadOddsBtn.parentNode) return null;
   btn = document.createElement("button");
   btn.id = "load-injuries-btn";
   btn.type = "button";
+  btn.className = loadOddsBtn.className || "edge-toggle";
   btn.textContent = "Load injuries";
   loadOddsBtn.parentNode.insertBefore(btn, loadOddsBtn.nextSibling);
   return btn;
@@ -342,7 +346,6 @@ function renderGames(games) {
     const pickResult = getPickResult(game);
     const resultText = getCoverResult(game);
     const injuryText = formatGameInjuries(injurySnapshot, game);
-    const injuryClass = shouldHighlightInjuries(system) ? "injury-line injury-flag" : "injury-line";
     const injuryLabel = shouldHighlightInjuries(system) ? "Injuries (check)" : "Injuries";
     card.innerHTML =
       '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + '">' + game.home_team + '</span></div>' +
@@ -361,24 +364,26 @@ function renderGames(games) {
       '<div class="historical-line">Historical insight: ' + (edge.leanTeam ? ("EDGE " + edge.leanTeam) : edge.leanText) + '</div>' +
       '<div class="system-line">' + system.text + (system.flags[0] ? " • " + system.flags[0] : "") + '</div>' +
       '<div class="system-breakdown">' + system.breakdown + '</div>' +
-      '<div class="card-actions"><button class="edge-toggle" type="button" data-target="' + detailsId + '">Edge insights</button><button class="injury-toggle" type="button" data-target="' + injuryId + '">' + injuryLabel + '</button></div>' +
+      '<button class="edge-toggle" type="button" data-target="' + detailsId + '">Edge insights</button>' +
       '<div class="edge-details hidden" id="' + detailsId + '"><div class="edge-lean">' + edge.leanText + '</div><ul class="edge-notes">' + edge.notes.map(n => "<li>" + n + "</li>").join("") + '</ul></div>' +
-      '<div class="' + injuryClass + ' hidden" id="' + injuryId + '">' + injuryText + '</div>';
+      '<button class="edge-toggle injury-toggle" type="button" data-target="' + injuryId + '" data-closed-label="' + injuryLabel + '">' + injuryLabel + '</button>' +
+      '<div class="edge-details hidden" id="' + injuryId + '">' + injuryText + '</div>';
     card.querySelectorAll(".pick-btn").forEach(btn => {
       btn.addEventListener("click", () => setPick(game, btn.dataset.side));
     });
     gamesContainer.appendChild(card);
   });
-  document.querySelectorAll(".edge-toggle, .injury-toggle").forEach(button => {
+  document.querySelectorAll(".edge-toggle").forEach(button => {
     button.addEventListener("click", () => {
       const target = document.getElementById(button.dataset.target);
       if (!target) return;
       const isHidden = target.classList.contains("hidden");
       target.classList.toggle("hidden");
-      if (button.classList.contains("edge-toggle")) {
-        button.textContent = isHidden ? "Hide insights" : "Edge insights";
+      if (button.classList.contains("injury-toggle")) {
+        const closed = button.dataset.closedLabel || "Injuries";
+        button.textContent = isHidden ? "Hide injuries" : closed;
       } else {
-        button.textContent = isHidden ? "Hide injuries" : (button.textContent.indexOf("check") !== -1 ? "Injuries (check)" : "Injuries");
+        button.textContent = isHidden ? "Hide insights" : "Edge insights";
       }
     });
   });
