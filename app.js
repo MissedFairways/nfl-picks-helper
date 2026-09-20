@@ -120,7 +120,7 @@ function rememberGames(games) {
       away_score: game.away_score ?? prev.away_score ?? null,
       home_score: game.home_score ?? prev.home_score ?? null,
       is_final: game.is_final ?? prev.is_final ?? false,
-      pick: game.pick || prev.pick || null,
+      pick: game.pick ? game.pick : null,
       target_win: game.pick ? (typeof game.target_win === "number" ? game.target_win : (prev.target_win ?? null)) : null,
       stake: game.pick ? (typeof game.stake === "number" ? game.stake : (prev.stake ?? null)) : null,
       savedAt: new Date().toISOString()
@@ -423,7 +423,10 @@ function renderSystemBoard(games) {
     const s = row.system;
     return "<li>" + g.away_team + " @ " + g.home_team + " — " + s.pickTeam + " " + s.margin.toFixed(2) + " (" + s.confidence + ", " + s.units + "u)</li>";
   }).join("");
-  board.innerHTML = "<strong>System plays (strongest first)</strong><ol>" + items + "</ol>";
+  board.style.paddingLeft = "28px";
+  board.style.paddingRight = "12px";
+  board.style.boxSizing = "border-box";
+  board.innerHTML = "<strong>System plays (strongest first)</strong><ol style=\"margin:8px 0 0 18px;padding-left:18px\">" + items + "</ol>";
   return board;
 }
 
@@ -568,7 +571,26 @@ function buildWeekDropdown() {
   weekSelect.addEventListener("change", () => loadRealSchedule(parseInt(weekSelect.value, 10)));
 }
 
+function applyPageTitle() {
+  document.title = "NFL BETTING MATRIX";
+  const heading = document.querySelector("h1, header h1, #app-title, .app-title, header .title");
+  if (heading) {
+    heading.textContent = "NFL BETTING MATRIX";
+    heading.style.textAlign = "center";
+    heading.style.width = "100%";
+    heading.style.display = "block";
+    return;
+  }
+  const created = document.createElement("h1");
+  created.id = "app-title";
+  created.textContent = "NFL BETTING MATRIX";
+  created.style.textAlign = "center";
+  created.style.margin = "12px 8px 16px";
+  document.body.insertBefore(created, document.body.firstChild);
+}
+
 async function startApp() {
+  applyPageTitle();
   buildWeekDropdown();
   loadOddsBtn.addEventListener("click", loadOdds);
   const injuriesBtn = getLoadInjuriesBtn();
