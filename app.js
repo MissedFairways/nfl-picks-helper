@@ -2,6 +2,8 @@ import { fetchSchedule } from "./js/schedule.js";
 import { analyzeMatchup } from "./js/edge.js";
 import { fetchLiveOdds, mergeOddsIntoSchedule } from "./js/odds.js";
 
+const ODDS_CACHE_KEY = "nflPicksOddsCache";
+
 let historicalGames = [];
 let currentSchedule = [];
 
@@ -9,6 +11,31 @@ const statusMessage = document.getElementById("status-message");
 const weekSelect = document.getElementById("week-select");
 const gamesContainer = document.getElementById("games-container");
 const loadOddsBtn = document.getElementById("load-odds-btn");
+
+function saveOddsCache(oddsGames) {
+  const payload = {
+    savedAt: new Date().toISOString(),
+    oddsGames
+  };
+  localStorage.setItem(ODDS_CACHE_KEY, JSON.stringify(payload));
+}
+
+function loadOddsCache() {
+  try {
+    const raw = localStorage.getItem(ODDS_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    console.error("Could not read saved odds:", error);
+    return null;
+  }
+}
+
+function formatSavedAt(iso) {
+  if (!iso) return "earlier";
+  const d = new Date(iso);
+  return d.toLocaleString();
+}
 
 async function loadHistorical() {
   try {
@@ -34,10 +61,20 @@ async function loadRealSchedule(week = null) {
     return;
   }
 
+  const cache = loadOddsCache();
+  if (cache && Array.isArray(cache.oddsGames)) {
+    currentSchedule = mergeOddsIntoSchedule(currentSchedule, cache.oddsGames);
+  }
+
   const season = currentSchedule[0]?.season ?? "????";
   const weekNum = currentSchedule[0]?.week ?? "?";
+  const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
 
-  statusMessage.textContent = `Real schedule loaded — ${season} Week ${weekNum} (${currentSchedule.length} games) • live odds off until you click the button`;
+  if (matched > 0) {
+    statusMessage.textContent = `Week ${weekNum} ${season} loaded • showing saved odds from ${formatSavedAt(cache?.savedAt)} • no new API call`;
+  } else {
+    statusMessage.textContent = `Real schedule loaded — ${season} Week ${weekNum} (${currentSchedule.length} games) • live odds off until you click the button`;
+  }
   statusMessage.style.color = "#4ade80";
 
   renderGames(currentSchedule);
@@ -84,7 +121,7 @@ function renderGames(games) {
         <div class="line-item">Total: <strong>${totalDisplay}</strong></div>
       </div>
       <div class="movement">
-        ${hasLine ? `Current line from ${game.bookmaker || "sportsbook"}` : "Live odds + opening line coming later"}
+        ${hasLine ? `Saved/current line from ${game.bookmaker || "sportsbook"}` : "Live odds + opening line coming later"}
       </div>
       <button class="edge-toggle" type="button" data-target="${detailsId}">
         Edge insights
@@ -118,11 +155,12 @@ async function loadOdds() {
 
   try {
     const oddsGames = await fetchLiveOdds();
+    saveOddsCache(oddsGames);
     currentSchedule = mergeOddsIntoSchedule(currentSchedule, oddsGames);
     renderGames(currentSchedule);
 
     const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
-    statusMessage.textContent = `Live odds loaded for ${matched} game(s). Quota used for this click only.`;
+    statusMessage.textContent = `Live odds loaded for ${matched} game(s) and saved in this browser. Quota used for this click only.`;
     statusMessage.style.color = "#4ade80";
   } catch (error) {
     console.error(error);
