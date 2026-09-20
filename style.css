@@ -1,8 +1,3 @@
-/* ======================
-   NFL Picks Helper
-   Complete stylesheet
-   ====================== */
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -46,25 +41,50 @@ header h1 {
   flex-wrap: wrap;
 }
 
-.controls label {
+.controls label,
+.import-label {
   color: #cbd5e1;
+}
+
+#week-select,
+.edge-toggle,
+.pick-btn,
+#load-odds-btn,
+#download-snapshot-btn,
+.import-label {
+  background: #0f172a;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.9rem;
 }
 
 #week-select {
   background: #1e293b;
-  color: #f8fafc;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 0.45rem 0.7rem;
-  font-size: 1rem;
+  border-color: #334155;
+}
+
+.import-label {
+  cursor: pointer;
+}
+
+.import-label input {
+  display: none;
 }
 
 .status-box {
   margin-bottom: 1.25rem;
 }
 
-#status-message {
+#status-message,
+#record-message {
   color: #94a3b8;
+}
+
+#record-message {
+  margin-top: 0.3rem;
+  color: #cbd5e1;
 }
 
 .games-container {
@@ -108,29 +128,39 @@ header h1 {
   font-weight: 600;
 }
 
+.pick-row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0.4rem;
+}
+
+.pick-btn.active {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.pick-status,
 .movement {
   font-size: 0.85rem;
   color: #94a3b8;
 }
 
-.edge-toggle,
-#load-odds-btn {
+.edge-toggle {
   margin-top: 0.8rem;
-  background: #0f172a;
-  color: #e2e8f0;
-  border: 1px solid #475569;
-  border-radius: 8px;
-  padding: 0.4rem 0.7rem;
   cursor: pointer;
-  font-size: 0.9rem;
 }
 
-#load-odds-btn {
-  margin-top: 0;
+#load-odds-btn,
+#download-snapshot-btn,
+.pick-btn {
+  cursor: pointer;
 }
 
 .edge-toggle:hover,
-#load-odds-btn:hover {
+#load-odds-btn:hover,
+#download-snapshot-btn:hover,
+.pick-btn:hover,
+.import-label:hover {
   border-color: #94a3b8;
 }
 
@@ -160,10 +190,6 @@ header h1 {
   padding-left: 1.1rem;
   color: #94a3b8;
   font-size: 0.86rem;
-}
-
-.edge-notes li {
-  margin-bottom: 0.25rem;
 }
 
 footer {
