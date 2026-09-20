@@ -4,7 +4,7 @@
  * Does not fetch anything until called on purpose.
  */
 
-const ODDS_API_KEY = "PASTE_YOUR_ODDS_API_KEY_HERE";
+const ODDS_API_KEY = "6e1bbc6d8091b3e0db2cd52bff537d33";
 
 const ODDS_URL =
   "https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds/?regions=us&markets=spreads,totals&oddsFormat=american";
