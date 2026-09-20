@@ -376,7 +376,8 @@ function renderGames(games) {
         ${game.pick ? `Your pick: ${game.pick === "home" ? game.home_team : game.away_team}${pickResult ? " • " + pickResult : ""}` : "No pick yet"}
       </div>
       <div class="movement">${movementText(game)}</div>
-      <div class="sagarin-line">${sagarin.note}</div>
+            <div class="sagarin-line">${sagarin.note}</div>
+      <div class="historical-line">Historical insight: ${edge.leanTeam ? "EDGE " + edge.leanTeam : edge.leanText}</div>
       <button class="edge-toggle" type="button" data-target="${detailsId}">Edge insights</button>
       <div class="edge-details hidden" id="${detailsId}">
         <div class="edge-lean">${edge.leanText}</div>
