@@ -121,6 +121,8 @@ function rememberGames(games) {
       home_score: game.home_score ?? prev.home_score ?? null,
       is_final: game.is_final ?? prev.is_final ?? false,
       pick: game.pick || prev.pick || null,
+      target_win: game.pick ? (typeof game.target_win === "number" ? game.target_win : (prev.target_win ?? null)) : null,
+      stake: game.pick ? (typeof game.stake === "number" ? game.stake : (prev.stake ?? null)) : null,
       savedAt: new Date().toISOString()
     };
   });
@@ -140,6 +142,8 @@ function applySavedGames(games) {
       favorite: game.favorite || saved.favorite,
       bookmaker: game.bookmaker || saved.bookmaker,
       pick: saved.pick || null,
+      target_win: saved.target_win ?? game.target_win ?? null,
+      stake: saved.stake ?? game.stake ?? null,
       away_score: game.away_score ?? saved.away_score,
       home_score: game.home_score ?? saved.home_score
     };
@@ -209,22 +213,83 @@ function getPickResult(game) {
   return game.pick === cover ? "Win" : "Loss";
 }
 
+function juiceStake(targetWin) {
+  if (typeof targetWin !== "number" || !(targetWin > 0)) return null;
+  return Math.round(targetWin * 1.1 * 100) / 100;
+}
+
+function money(n) {
+  const v = Number(n) || 0;
+  return (v < 0 ? "-$" : "$") + Math.abs(v).toFixed(2);
+}
+
+function settledResult(game) {
+  const cover = getCoverSide(game);
+  if (!game.pick || !cover) return null;
+  if (cover === "push") return "push";
+  return game.pick === cover ? "win" : "loss";
+}
+
+function tallyMoney(games) {
+  let risked = 0, toCollect = 0, collected = 0, settledRisk = 0, openRisk = 0;
+  (games || []).forEach(game => {
+    if (!game.pick || typeof game.stake !== "number") return;
+    const result = settledResult(game);
+    if (!result) {
+      openRisk += game.stake;
+      risked += game.stake;
+      toCollect += (game.stake + (game.target_win || 0));
+      return;
+    }
+    settledRisk += game.stake;
+    risked += game.stake;
+    if (result === "win") collected += game.stake + (game.target_win || 0);
+    else if (result === "push") collected += game.stake;
+  });
+  return {
+    risked,
+    openRisk,
+    settledRisk,
+    toCollect,
+    collected,
+    net: collected - settledRisk
+  };
+}
+
 function updateRecord() {
   const store = loadLineStore();
+  const all = Object.values(store);
   let wins = 0, losses = 0, pushes = 0;
-  Object.values(store).forEach(game => {
-    if (!game.pick || !game.is_final || typeof game.spread_close !== "number") return;
-    if (game.home_score == null || game.away_score == null) return;
-    const cover = getCoverSide(game);
-    if (cover === "push") pushes += 1;
-    else if (game.pick === cover) wins += 1;
-    else losses += 1;
+  all.forEach(game => {
+    const result = settledResult(game);
+    if (result === "push") pushes += 1;
+    else if (result === "win") wins += 1;
+    else if (result === "loss") losses += 1;
   });
-  recordMessage.textContent = "Your ATS record: " + wins + "-" + losses + "-" + pushes;
+  const bank = tallyMoney(all);
+  recordMessage.textContent = "Your ATS record: " + wins + "-" + losses + "-" + pushes +
+    " • Net " + money(bank.net) + " (risked " + money(bank.risked) + ", collected " + money(bank.collected) + ")";
 }
 
 function setPick(game, side) {
   game.pick = game.pick === side ? null : side;
+  if (!game.pick) {
+    game.target_win = null;
+    game.stake = null;
+  }
+  rememberGames([game]);
+  renderGames(currentSchedule);
+}
+
+function setTargetWin(game, raw) {
+  const target = Number(raw);
+  if (!game.pick || !Number.isFinite(target) || target <= 0) {
+    game.target_win = null;
+    game.stake = null;
+  } else {
+    game.target_win = Math.round(target * 100) / 100;
+    game.stake = juiceStake(game.target_win);
+  }
   rememberGames([game]);
   renderGames(currentSchedule);
 }
@@ -240,10 +305,10 @@ function downloadSnapshot() {
     statusMessage.style.color = "#fbbf24";
     return;
   }
-  const headers = ["season","week","away_team","home_team","spread_open","spread_close","total_close","favorite","bookmaker","away_score","home_score","is_final","pick"];
+  const headers = ["season","week","away_team","home_team","spread_open","spread_close","total_close","favorite","bookmaker","away_score","home_score","is_final","pick","target_win","stake"];
   const lines = [headers.join(",")];
   rows.forEach(g => {
-    lines.push([g.season,g.week,g.away_team,g.home_team,g.spread_open,g.spread_close,g.total_close,g.favorite,g.bookmaker,g.away_score,g.home_score,g.is_final,g.pick].map(csvEscape).join(","));
+    lines.push([g.season,g.week,g.away_team,g.home_team,g.spread_open,g.spread_close,g.total_close,g.favorite,g.bookmaker,g.away_score,g.home_score,g.is_final,g.pick,g.target_win,g.stake].map(csvEscape).join(","));
   });
   const url = URL.createObjectURL(new Blob([lines.join("\n")], { type: "text/csv" }));
   const a = document.createElement("a");
@@ -285,7 +350,9 @@ function importSnapshot(file) {
         away_score: row.away_score === "" ? null : Number(row.away_score),
         home_score: row.home_score === "" ? null : Number(row.home_score),
         is_final: row.is_final === "true",
-        pick: row.pick || null
+        pick: row.pick || null,
+        target_win: row.target_win === "" || row.target_win == null ? null : Number(row.target_win),
+        stake: row.stake === "" || row.stake == null ? null : Number(row.stake)
       };
       store[gameKey(game)] = { ...game, savedAt: new Date().toISOString() };
     });
@@ -363,12 +430,15 @@ function renderSystemBoard(games) {
 function renderPicksBoard(games) {
   const board = document.createElement("div");
   board.className = "picks-board";
-  const picks = (games || [])
-    .filter(g => g.pick === "home" || g.pick === "away")
-    .map(g => teamAbbr(pickTeamName(g)))
-    .filter(Boolean);
-  const line = picks.length ? picks.join(", ") : "none yet";
-  board.innerHTML = '<div class="picks-board-title">Your picks this week</div><div class="picks-board-list">' + line + "</div>";
+  const picked = (games || []).filter(g => g.pick === "home" || g.pick === "away");
+  const line = picked.length ? picked.map(g => teamAbbr(pickTeamName(g))).join(", ") : "none yet";
+  const weekMoney = tallyMoney(picked);
+  board.innerHTML =
+    '<div class="picks-board-title">Your picks this week</div>' +
+    '<div class="picks-board-list">' + line + "</div>" +
+    '<div class="picks-board-money">This week risked ' + money(weekMoney.risked) +
+    " • if all pending win, collect " + money(weekMoney.toCollect) +
+    " • settled net " + money(weekMoney.net) + "</div>";
   board.style.fontSize = "1.35rem";
   board.style.margin = "12px 0 20px";
   return board;
@@ -407,6 +477,7 @@ function renderGames(games) {
       (resultText ? '<div class="result-line">' + resultText + '</div>' : '') +
       '<div class="pick-row"><button class="pick-btn' + (game.pick === "away" ? " active" : "") + '" data-side="away">Pick ' + game.away_team + '</button><button class="pick-btn' + (game.pick === "home" ? " active" : "") + '" data-side="home">Pick ' + game.home_team + '</button></div>' +
       '<div class="pick-status">' + (game.pick ? ("Your pick: " + (game.pick === "home" ? game.home_team : game.away_team) + (pickResult ? " • " + pickResult : "")) : "No pick yet") + '</div>' +
+      (game.pick ? ('<div class="stake-row">To win $ <input class="stake-input" type="number" min="1" step="10" value="' + (typeof game.target_win === "number" ? game.target_win : "") + '"> • Risk ' + (typeof game.stake === "number" ? money(game.stake) : "$0.00") + ' (win pays ' + (typeof game.stake === "number" && typeof game.target_win === "number" ? money(game.stake + game.target_win) : "$0.00") + ')</div>') : '') +
       '<div class="movement">' + movementText(game) + '</div>' +
       '<div class="sagarin-line">' + sagarin.note + '</div>' +
       '<div class="historical-line">Historical insight: ' + (edge.leanTeam ? ("EDGE " + edge.leanTeam) : edge.leanText) + '</div>' +
@@ -419,6 +490,16 @@ function renderGames(games) {
     card.querySelectorAll(".pick-btn").forEach(btn => {
       btn.addEventListener("click", () => setPick(game, btn.dataset.side));
     });
+    const stakeInput = card.querySelector(".stake-input");
+    if (stakeInput) {
+      stakeInput.addEventListener("change", () => setTargetWin(game, stakeInput.value));
+      stakeInput.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          setTargetWin(game, stakeInput.value);
+        }
+      });
+    }
     gamesContainer.appendChild(card);
   });
   document.querySelectorAll(".edge-toggle").forEach(button => {
