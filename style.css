@@ -107,6 +107,12 @@ header h1 {
   color: #f8fafc;
 }
 
+.sagarin-line {
+  margin-top: 0.45rem;
+  font-size: 0.86rem;
+  color: #93c5fd;
+}
+
 .favorite {
   color: #4ade80;
 }
