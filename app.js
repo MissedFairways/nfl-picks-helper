@@ -98,6 +98,34 @@ function applySavedGames(games) {
   });
 }
 
+function applyRepoSnapshot(games, snapshotGames) {
+  return games.map(game => {
+    const match = snapshotGames.find(s =>
+      s.away_team === game.away_team && s.home_team === game.home_team
+    );
+    if (!match) return game;
+
+    return {
+      ...game,
+      spread_close: typeof game.spread_close === "number" ? game.spread_close : match.spread_close,
+      total_close: typeof game.total_close === "number" ? game.total_close : match.total_close,
+      favorite: game.favorite || match.favorite,
+      bookmaker: game.bookmaker || match.bookmaker
+    };
+  });
+}
+
+async function loadRepoSnapshot(season, week) {
+  try {
+    const res = await fetch(`data/snapshots/${season}_week_${week}.json`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.games) ? data.games : [];
+  } catch (error) {
+    return [];
+  }
+}
+
 function getCoverSide(game) {
   if (!game.is_final || game.home_score == null || game.away_score == null) return null;
   if (typeof game.spread_close !== "number") return null;
@@ -205,7 +233,6 @@ function downloadSnapshot() {
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
-
   const headers = lines[0].split(",").map(h => h.replaceAll('"', "").trim());
 
   return lines.slice(1).map(line => {
@@ -288,11 +315,13 @@ async function loadRealSchedule(week = null) {
     currentSchedule = mergeOddsIntoSchedule(currentSchedule, cache.oddsGames);
   }
 
+  const season = currentSchedule[0]?.season;
+  const weekNum = currentSchedule[0]?.week;
+  const repoGames = await loadRepoSnapshot(season, weekNum);
+  currentSchedule = applyRepoSnapshot(currentSchedule, repoGames);
   currentSchedule = applySavedGames(currentSchedule);
   rememberGames(currentSchedule);
 
-  const season = currentSchedule[0]?.season ?? "????";
-  const weekNum = currentSchedule[0]?.week ?? "?";
   const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
   statusMessage.textContent = `Week ${weekNum} ${season} loaded • ${matched} game(s) have a saved line`;
   statusMessage.style.color = "#4ade80";
@@ -398,7 +427,7 @@ async function loadOdds() {
     renderGames(currentSchedule);
 
     const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
-    statusMessage.textContent = `Live odds loaded for ${matched} game(s). Download a snapshot when you're ready.`;
+    statusMessage.textContent = `Live odds loaded for ${matched} game(s).`;
     statusMessage.style.color = "#4ade80";
   } catch (error) {
     console.error(error);
@@ -420,8 +449,7 @@ function buildWeekDropdown() {
   }
 
   weekSelect.addEventListener("change", () => {
-    const selectedWeek = parseInt(weekSelect.value, 10);
-    loadRealSchedule(selectedWeek);
+    loadRealSchedule(parseInt(weekSelect.value, 10));
   });
 }
 
