@@ -102,6 +102,12 @@ header h1 {
   color: #f8fafc;
 }
 
+.result-line {
+  margin-bottom: 0.6rem;
+  color: #4ade80;
+  font-weight: 600;
+}
+
 .movement {
   font-size: 0.85rem;
   color: #94a3b8;
