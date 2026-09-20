@@ -40,31 +40,50 @@ export function scoreGame(game, historical, sagarinData) {
   let away = 0;
 
   const sag = sagarinForGame(game, sagarinData);
-  if (typeof sag.edgePoints === "number" && Math.abs(sag.edgePoints) >= 0.5) {
-    const bucket = sagarinBucket(Math.abs(sag.edgePoints));
-    const weighted = bucket.points * weights.sagarin;
+  const sagAbs = typeof sag.edgePoints === "number" ? Math.abs(sag.edgePoints) : 0;
+  const sagBucket = sagarinBucket(sagAbs);
+  const hasSag = sagBucket.points > 0 && sag.edgeTeam;
+
+  let rawMove = null;
+  let absMove = 0;
+  let moveTeam = null;
+  let towardHome = null;
+  if (typeof game.spread_open === "number" && typeof game.spread_close === "number") {
+    rawMove = game.spread_close - game.spread_open;
+    absMove = Math.abs(rawMove);
+    towardHome = rawMove < 0;
+    moveTeam = towardHome ? game.home_team : game.away_team;
+  }
+
+  const conflict =
+    hasSag &&
+    moveTeam &&
+    sag.edgeTeam !== moveTeam &&
+    absMove >= 2 &&
+    sagAbs >= 3;
+
+  if (hasSag) {
+    let sagWeight = weights.sagarin;
+    if (conflict) sagWeight = sagWeight * (2 / 3);
+    const weighted = sagBucket.points * sagWeight;
     if (sag.edgeTeam === game.home_team) home += weighted;
     if (sag.edgeTeam === game.away_team) away += weighted;
-    reasons.push("Sagarin " + bucket.label + " edge " + sag.edgeTeam + " (" + Math.abs(sag.edgePoints).toFixed(2) + ")");
-    if (Math.abs(sag.edgePoints) >= 5) {
+    reasons.push("Sagarin " + sagBucket.label + " edge " + sag.edgeTeam + " (" + sagAbs.toFixed(2) + ")");
+    if (sagAbs >= 5) {
       flags.push("Large Sagarin gap — check injuries/news before trusting this");
     }
   }
 
-  if (typeof game.spread_open === "number" && typeof game.spread_close === "number") {
-    const rawMove = game.spread_close - game.spread_open;
-    const absMove = Math.abs(rawMove);
+  if (rawMove !== null) {
     const bucket = moveBucket(absMove);
     if (bucket.points > 0) {
-      const towardHome = rawMove < 0;
-      const moveTeam = towardHome ? game.home_team : game.away_team;
-      const weighted = bucket.points * weights.movement;
-      if (towardHome) home += weighted;
-      else away += weighted;
       reasons.push("Line " + bucket.label + " move toward " + moveTeam + " (" + game.spread_open + " → " + game.spread_close + ")");
-
-      if (sag.edgeTeam && sag.edgeTeam !== moveTeam && absMove >= 2 && Math.abs(sag.edgePoints || 0) >= 3) {
-        flags.push("Sagarin and the line move disagree — possible injury or sharp vs public fight");
+      if (conflict) {
+        flags.push("Conflict: Sagarin and the line move disagree");
+      } else {
+        const weighted = bucket.points * weights.movement;
+        if (towardHome) home += weighted;
+        else away += weighted;
       }
     }
   } else {
@@ -73,7 +92,6 @@ export function scoreGame(game, historical, sagarinData) {
 
   let homeHist = 0;
   let awayHist = 0;
-
   if (historical && historical.length) {
     const homeAtHome = historical.filter(g => g.home_team === game.home_team && !g.push);
     if (homeAtHome.length >= MIN_HIST) {
@@ -87,7 +105,6 @@ export function scoreGame(game, historical, sagarinData) {
         reasons.push(game.home_team + " weak at home historically");
       }
     }
-
     const awayOnRoad = historical.filter(g => g.away_team === game.away_team && !g.push);
     if (awayOnRoad.length >= MIN_HIST) {
       const rate = awayOnRoad.filter(g => g.away_covered).length / awayOnRoad.length;
@@ -100,7 +117,6 @@ export function scoreGame(game, historical, sagarinData) {
         reasons.push(game.away_team + " weak on the road historically");
       }
     }
-
     if (typeof game.spread_close === "number") {
       const size = Math.abs(game.spread_close);
       if (game.spread_close > 0 && size <= 7) {
@@ -142,6 +158,14 @@ export function scoreGame(game, historical, sagarinData) {
     units = 1;
   }
 
+  if (pick && (sagAbs >= 5 || conflict) && units > 1) {
+    units = 1;
+    confidence = conflict ? "conflict" : "caution";
+  }
+
+  let text = pickTeam ? ("System: " + pickTeam + " (" + confidence + ", " + units + "u)") : "System: no play";
+  if (conflict && pickTeam) text = "System: " + pickTeam + " (conflict, " + units + "u)";
+
   return {
     pick,
     pickTeam,
@@ -151,6 +175,6 @@ export function scoreGame(game, historical, sagarinData) {
     away,
     reasons,
     flags,
-    text: pickTeam ? ("System: " + pickTeam + " (" + confidence + ", " + units + "u)") : "System: no play"
+    text
   };
 }
