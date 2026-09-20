@@ -3,8 +3,8 @@ name: Save weekly odds snapshot
 on:
   workflow_dispatch:
   schedule:
+    - cron: "0 16 * * 2"
     - cron: "0 16 * * 6"
-    - cron: "0 17 * * 1"
 
 permissions:
   contents: write
