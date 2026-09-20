@@ -2,6 +2,7 @@ import { fetchSchedule, fetchCurrentWeekNumber } from "./js/schedule.js";
 import { analyzeMatchup } from "./js/edge.js";
 import { fetchLiveOdds, mergeOddsIntoSchedule } from "./js/odds.js";
 import { loadSagarin, sagarinForGame } from "./js/sagarin.js";
+import { scoreGame } from "./js/system.js";
 
 const ODDS_CACHE_KEY = "nflPicksOddsCache";
 const LINE_STORE_KEY = "nflPicksLineStore";
@@ -351,6 +352,7 @@ function renderGames(games) {
     const awayClass = favoriteName === game.away_team ? "favorite" : "";
     const edge = analyzeMatchup(game, historicalGames);
     const sagarin = sagarinForGame(game, sagarinData);
+    const system = scoreGame(game, historicalGames, sagarinData);
     const notesHtml = edge.notes.map(n => `<li>${n}</li>`).join("");
     const detailsId = `edge-details-${index}`;
 
@@ -376,8 +378,9 @@ function renderGames(games) {
         ${game.pick ? `Your pick: ${game.pick === "home" ? game.home_team : game.away_team}${pickResult ? " • " + pickResult : ""}` : "No pick yet"}
       </div>
       <div class="movement">${movementText(game)}</div>
-            <div class="sagarin-line">${sagarin.note}</div>
+      <div class="sagarin-line">${sagarin.note}</div>
       <div class="historical-line">Historical insight: ${edge.leanTeam ? "EDGE " + edge.leanTeam : edge.leanText}</div>
+      <div class="system-line">${system.text}${system.flags[0] ? " • " + system.flags[0] : ""}</div>
       <button class="edge-toggle" type="button" data-target="${detailsId}">Edge insights</button>
       <div class="edge-details hidden" id="${detailsId}">
         <div class="edge-lean">${edge.leanText}</div>
@@ -391,72 +394,3 @@ function renderGames(games) {
     gamesContainer.appendChild(card);
   });
 
-  document.querySelectorAll(".edge-toggle").forEach(button => {
-    button.addEventListener("click", () => {
-      const target = document.getElementById(button.dataset.target);
-      if (!target) return;
-      const isHidden = target.classList.contains("hidden");
-      target.classList.toggle("hidden");
-      button.textContent = isHidden ? "Hide insights" : "Edge insights";
-    });
-  });
-}
-
-async function loadOdds() {
-  loadOddsBtn.disabled = true;
-  loadOddsBtn.textContent = "Loading odds...";
-  try {
-    const oddsGames = await fetchLiveOdds();
-    saveOddsCache(oddsGames);
-    currentSchedule = mergeOddsIntoSchedule(currentSchedule, oddsGames);
-    currentSchedule = applySavedGames(currentSchedule);
-    rememberGames(currentSchedule);
-    renderGames(currentSchedule);
-    const matched = currentSchedule.filter(g => typeof g.spread_close === "number").length;
-    statusMessage.textContent = `Live odds loaded for ${matched} game(s).`;
-    statusMessage.style.color = "#4ade80";
-  } catch (error) {
-    statusMessage.textContent = error.message;
-    statusMessage.style.color = "#f87171";
-  } finally {
-    loadOddsBtn.disabled = false;
-    loadOddsBtn.textContent = "Load live odds";
-  }
-}
-
-function buildWeekDropdown() {
-  weekSelect.innerHTML = "";
-  for (let w = 1; w <= 18; w++) {
-    const option = document.createElement("option");
-    option.value = w;
-    option.textContent = `Week ${w}`;
-    weekSelect.appendChild(option);
-  }
-  weekSelect.addEventListener("change", () => {
-    loadRealSchedule(parseInt(weekSelect.value, 10));
-  });
-}
-
-async function startApp() {
-  buildWeekDropdown();
-  loadOddsBtn.addEventListener("click", loadOdds);
-  downloadBtn.addEventListener("click", downloadSnapshot);
-  importInput.addEventListener("change", () => {
-    if (importInput.files[0]) importSnapshot(importInput.files[0]);
-  });
-
-  await loadHistorical();
-
-  try {
-    sagarinData = await loadSagarin();
-  } catch (error) {
-    console.error(error);
-    sagarinData = null;
-  }
-
-  const currentWeek = await fetchCurrentWeekNumber();
-  weekSelect.value = String(currentWeek);
-  await loadRealSchedule(currentWeek);
-}
-
-startApp();
