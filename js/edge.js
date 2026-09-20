@@ -33,6 +33,33 @@ export function lineBucket(spreadSize) {
   return { id: "other", label: String(size) };
 }
 
+
+const DIVISIONS = {
+  ARI:"NFC West",ATL:"NFC South",BAL:"AFC North",BUF:"AFC East",
+  CAR:"NFC South",CHI:"NFC North",CIN:"AFC North",CLE:"AFC North",
+  DAL:"NFC East",DEN:"AFC West",DET:"NFC North",GB:"NFC North",
+  HOU:"AFC South",IND:"AFC South",JAX:"AFC South",KC:"AFC West",
+  LAC:"AFC West",LAR:"NFC West",LV:"AFC West",MIA:"AFC East",
+  MIN:"NFC North",NE:"AFC East",NO:"NFC South",NYG:"NFC East",
+  NYJ:"AFC East",PHI:"NFC East",PIT:"AFC North",SEA:"NFC West",
+  SF:"NFC West",TB:"NFC South",TEN:"AFC South",WAS:"NFC East",WSH:"NFC East",
+  "Arizona Cardinals":"NFC West","Atlanta Falcons":"NFC South","Baltimore Ravens":"AFC North","Buffalo Bills":"AFC East",
+  "Carolina Panthers":"NFC South","Chicago Bears":"NFC North","Cincinnati Bengals":"AFC North","Cleveland Browns":"AFC North",
+  "Dallas Cowboys":"NFC East","Denver Broncos":"AFC West","Detroit Lions":"NFC North","Green Bay Packers":"NFC North",
+  "Houston Texans":"AFC South","Indianapolis Colts":"AFC South","Jacksonville Jaguars":"AFC South","Kansas City Chiefs":"AFC West",
+  "Los Angeles Chargers":"AFC West","Los Angeles Rams":"NFC West","Las Vegas Raiders":"AFC West","Miami Dolphins":"AFC East",
+  "Minnesota Vikings":"NFC North","New England Patriots":"AFC East","New Orleans Saints":"NFC South","New York Giants":"NFC East",
+  "New York Jets":"AFC East","Philadelphia Eagles":"NFC East","Pittsburgh Steelers":"AFC North","Seattle Seahawks":"NFC West",
+  "San Francisco 49ers":"NFC West","Tampa Bay Buccaneers":"NFC South","Tennessee Titans":"AFC South","Washington Commanders":"NFC East"
+};
+
+function teamCoveredInGame(g, team) {
+  if (!g || g.push) return null;
+  if (g.home_team === team) return g.home_covered ? true : false;
+  if (g.away_team === team) return g.away_covered ? true : false;
+  return null;
+}
+
 export function homeDogsUnder(games, maxSpread = 7) {
   const filtered = games.filter(g =>
     g.is_home_dog &&
@@ -145,12 +172,33 @@ export function analyzeMatchup(game, historical) {
     notes.push("Not enough " + start + "-" + end + " road games for " + away + ".");
   }
 
+  const homeDiv = DIVISIONS[home];
+  const awayDiv = DIVISIONS[away];
+  if (homeDiv && homeDiv === awayDiv) {
+    notes.push("Division game (" + homeDiv + ").");
+  }
+
   const h2h = teamHist.filter(g =>
     (g.home_team === home && g.away_team === away) ||
     (g.home_team === away && g.away_team === home)
   );
+  const h2hDecided = h2h.filter(g => !g.push);
   if (h2h.length > 0) {
-    notes.push("These two teams have " + h2h.length + " meeting(s) from " + start + "-" + end + ".");
+    const homeCovers = h2hDecided.filter(g => teamCoveredInGame(g, home) === true).length;
+    const awayCovers = h2hDecided.filter(g => teamCoveredInGame(g, away) === true).length;
+    const decided = h2hDecided.length;
+    let h2hLine = "H2H " + start + "-" + end + ": " + h2h.length + " meeting(s)";
+    if (decided > 0) {
+      h2hLine += " • " + home + " covered " + homeCovers + "/" + decided + " • " + away + " covered " + awayCovers + "/" + decided;
+      if (homeCovers > awayCovers) h2hLine += " • Edge " + home;
+      else if (awayCovers > homeCovers) h2hLine += " • Edge " + away;
+      else h2hLine += " • no H2H ATS edge";
+    }
+    notes.push(h2hLine);
+    if (decided >= 6) {
+      if (homeCovers / decided >= 0.60) homeScore += 1;
+      if (awayCovers / decided >= 0.60) awayScore += 1;
+    }
   }
 
   const spread = game.spread_close ?? game.spread ?? null;
