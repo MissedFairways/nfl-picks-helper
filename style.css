@@ -41,6 +41,12 @@ header h1 {
   flex-wrap: wrap;
 }
 
+.system-line {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.86rem;
+  color: #4ade80;
+}
+
 .controls label,
 .import-label {
   color: #cbd5e1;
