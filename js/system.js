@@ -1,7 +1,5 @@
-import { homeDogsUnder, homeFavoritesOver } from "./edge.js";
+import { analyzeMatchup } from "./edge.js";
 import { sagarinForGame } from "./sagarin.js";
-
-const MIN_HIST = 20;
 
 function seasonWeights(week) {
   if (week <= 4) return { movement: 0.50, sagarin: 0.30, historical: 0.20 };
@@ -90,54 +88,13 @@ export function scoreGame(game, historical, sagarinData) {
     reasons.push("No Tuesday-to-Saturday move yet");
   }
 
-  let homeHist = 0;
-  let awayHist = 0;
-  if (historical && historical.length) {
-    const homeAtHome = historical.filter(g => g.home_team === game.home_team && !g.push);
-    if (homeAtHome.length >= MIN_HIST) {
-      const rate = homeAtHome.filter(g => g.home_covered).length / homeAtHome.length;
-      if (rate >= 0.55) {
-        homeHist += 1;
-        reasons.push(game.home_team + " strong at home historically");
-      }
-      if (rate <= 0.45) {
-        awayHist += 1;
-        reasons.push(game.home_team + " weak at home historically");
-      }
-    }
-    const awayOnRoad = historical.filter(g => g.away_team === game.away_team && !g.push);
-    if (awayOnRoad.length >= MIN_HIST) {
-      const rate = awayOnRoad.filter(g => g.away_covered).length / awayOnRoad.length;
-      if (rate >= 0.55) {
-        awayHist += 1;
-        reasons.push(game.away_team + " strong on the road historically");
-      }
-      if (rate <= 0.45) {
-        homeHist += 1;
-        reasons.push(game.away_team + " weak on the road historically");
-      }
-    }
-    if (typeof game.spread_close === "number") {
-      const size = Math.abs(game.spread_close);
-      if (game.spread_close > 0 && size <= 7) {
-        const stat = homeDogsUnder(historical, 7);
-        if (stat.total >= MIN_HIST && stat.rate >= 52) {
-          homeHist += 1;
-          reasons.push("Home-dog pattern supports home");
-        }
-      }
-      if (game.spread_close < 0 && size >= 7) {
-        const stat = homeFavoritesOver(historical, 7);
-        if (stat.total >= MIN_HIST && stat.rate <= 48) {
-          awayHist += 1;
-          reasons.push("Big home favorites have underperformed in the sample");
-        }
-      }
-    }
-  }
-
+  const hist = analyzeMatchup(game, historical);
+  const homeHist = hist.homeArrows || 0;
+  const awayHist = hist.awayArrows || 0;
   home += histStrength(homeHist) * weights.historical;
   away += histStrength(awayHist) * weights.historical;
+  if (homeHist) reasons.push("Historical arrows home: " + homeHist);
+  if (awayHist) reasons.push("Historical arrows away: " + awayHist);
   if (homeHist >= 3) reasons.push("All available historical arrows point home");
   if (awayHist >= 3) reasons.push("All available historical arrows point away");
 
