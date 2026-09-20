@@ -7,7 +7,7 @@ from pathlib import Path
 
 URL = "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv.gz"
 TEAM = {"LA": "LAR", "WAS": "WSH"}
-SEASONS = {"2023", "2024", "2025"}
+SEASONS = {str(year) for year in range(2015, 2026)}}
 
 
 def norm(team):
