@@ -293,9 +293,40 @@ async function loadRealSchedule(week) {
   renderGames(currentSchedule);
 }
 
+function isThursdayGame(game) {
+  const raw = game.date || game.start_date || game.kickoff || game.commence_time || game.start;
+  if (!raw) return false;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return false;
+  return d.getDay() === 4 || d.getUTCDay() === 4;
+}
+
+function renderSystemBoard(games) {
+  const board = document.createElement("div");
+  board.className = "system-board";
+  const scored = games
+    .filter(g => !g.is_final && !isThursdayGame(g))
+    .map(g => ({ game: g, system: scoreGame(g, historicalGames, sagarinData) }))
+    .filter(row => row.system.pickTeam && row.system.margin >= 0.30)
+    .sort((a, b) => b.system.margin - a.system.margin)
+    .slice(0, 5);
+  if (!scored.length) {
+    board.innerHTML = "<strong>System plays</strong><div>No ranked plays yet. Need Sagarin vs Vegas and/or historical arrows.</div>";
+    return board;
+  }
+  const items = scored.map((row, i) => {
+    const g = row.game;
+    const s = row.system;
+    return "<li>" + (i + 1) + ". " + g.away_team + " @ " + g.home_team + " — " + s.pickTeam + " " + s.margin.toFixed(2) + " (" + s.confidence + ", " + s.units + "u)</li>";
+  }).join("");
+  board.innerHTML = "<strong>System plays (strongest first)</strong><ol>" + items + "</ol>";
+  return board;
+}
+
 function renderGames(games) {
   gamesContainer.innerHTML = "";
   updateRecord();
+  gamesContainer.appendChild(renderSystemBoard(games));
   games.forEach((game, index) => {
     const card = document.createElement("div");
     card.className = "game-card";
@@ -307,10 +338,12 @@ function renderGames(games) {
     const sagarin = sagarinForGame(game, sagarinData);
     const system = scoreGame(game, historicalGames, sagarinData);
     const detailsId = "edge-details-" + index;
+    const injuryId = "injury-details-" + index;
     const pickResult = getPickResult(game);
     const resultText = getCoverResult(game);
     const injuryText = formatGameInjuries(injurySnapshot, game);
     const injuryClass = shouldHighlightInjuries(system) ? "injury-line injury-flag" : "injury-line";
+    const injuryLabel = shouldHighlightInjuries(system) ? "Injuries (check)" : "Injuries";
     card.innerHTML =
       '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + '">' + game.home_team + '</span></div>' +
       '<div class="lines">' +
@@ -327,21 +360,26 @@ function renderGames(games) {
       '<div class="sagarin-line">' + sagarin.note + '</div>' +
       '<div class="historical-line">Historical insight: ' + (edge.leanTeam ? ("EDGE " + edge.leanTeam) : edge.leanText) + '</div>' +
       '<div class="system-line">' + system.text + (system.flags[0] ? " • " + system.flags[0] : "") + '</div>' +
-      '<div class="' + injuryClass + '">Injuries: ' + injuryText + '</div>' +
-      '<button class="edge-toggle" type="button" data-target="' + detailsId + '">Edge insights</button>' +
-      '<div class="edge-details hidden" id="' + detailsId + '"><div class="edge-lean">' + edge.leanText + '</div><ul class="edge-notes">' + edge.notes.map(n => "<li>" + n + "</li>").join("") + '</ul></div>';
+      '<div class="system-breakdown">' + system.breakdown + '</div>' +
+      '<div class="card-actions"><button class="edge-toggle" type="button" data-target="' + detailsId + '">Edge insights</button><button class="injury-toggle" type="button" data-target="' + injuryId + '">' + injuryLabel + '</button></div>' +
+      '<div class="edge-details hidden" id="' + detailsId + '"><div class="edge-lean">' + edge.leanText + '</div><ul class="edge-notes">' + edge.notes.map(n => "<li>" + n + "</li>").join("") + '</ul></div>' +
+      '<div class="' + injuryClass + ' hidden" id="' + injuryId + '">' + injuryText + '</div>';
     card.querySelectorAll(".pick-btn").forEach(btn => {
       btn.addEventListener("click", () => setPick(game, btn.dataset.side));
     });
     gamesContainer.appendChild(card);
   });
-  document.querySelectorAll(".edge-toggle").forEach(button => {
+  document.querySelectorAll(".edge-toggle, .injury-toggle").forEach(button => {
     button.addEventListener("click", () => {
       const target = document.getElementById(button.dataset.target);
       if (!target) return;
       const isHidden = target.classList.contains("hidden");
       target.classList.toggle("hidden");
-      button.textContent = isHidden ? "Hide insights" : "Edge insights";
+      if (button.classList.contains("edge-toggle")) {
+        button.textContent = isHidden ? "Hide insights" : "Edge insights";
+      } else {
+        button.textContent = isHidden ? "Hide injuries" : (button.textContent.indexOf("check") !== -1 ? "Injuries (check)" : "Injuries");
+      }
     });
   });
 }
