@@ -5,7 +5,7 @@
 // ======================
 
 import { fetchSchedule } from "./js/schedule.js";
-import { homeDogsUnder, underdogsUnder, homeFavoritesOver } from "./js/edge.js";
+import { analyzeMatchup } from "./js/edge.js";
 
 let historicalGames = [];
 let currentSchedule = [];
@@ -13,23 +13,18 @@ let currentSchedule = [];
 const statusMessage = document.getElementById("status-message");
 const weekSelect = document.getElementById("week-select");
 const gamesContainer = document.getElementById("games-container");
-const edgeBox = document.getElementById("edge-box");
 
-// ---------- Historical (background + edge analysis) ----------
 async function loadHistorical() {
   try {
     const response = await fetch("data/historical.json");
     if (!response.ok) throw new Error("Could not load historical.json");
     historicalGames = await response.json();
     console.log(`Historical data loaded (${historicalGames.length} games)`);
-    renderEdgeInsights();
   } catch (error) {
     console.error("Historical load failed:", error);
-    edgeBox.innerHTML = `<p style="color:#f87171">Could not load historical data for edge analysis</p>`;
   }
 }
 
-// ---------- Real Schedule ----------
 async function loadRealSchedule(week = null) {
   statusMessage.textContent = "Loading real NFL schedule...";
   statusMessage.style.color = "#94a3b8";
@@ -52,7 +47,6 @@ async function loadRealSchedule(week = null) {
   renderGames(currentSchedule);
 }
 
-// ---------- Render game cards ----------
 function renderGames(games) {
   gamesContainer.innerHTML = "";
 
@@ -61,13 +55,17 @@ function renderGames(games) {
     return;
   }
 
-  games.forEach(game => {
+  games.forEach((game, index) => {
     const card = document.createElement("div");
     card.className = "game-card";
 
     let statusText = "Scheduled";
     if (game.is_final) statusText = "Final";
     else if (game.is_in_progress) statusText = "In Progress";
+
+    const edge = analyzeMatchup(game, historicalGames);
+    const notesHtml = edge.notes.map(n => `<li>${n}</li>`).join("");
+    const detailsId = `edge-details-${index}`;
 
     card.innerHTML = `
       <div class="matchup">
@@ -82,40 +80,30 @@ function renderGames(games) {
       <div class="movement">
         Live odds + opening line coming later
       </div>
+      <button class="edge-toggle" type="button" data-target="${detailsId}">
+        Edge insights
+      </button>
+      <div class="edge-details hidden" id="${detailsId}">
+        <div class="edge-lean">${edge.leanText}</div>
+        <ul class="edge-notes">
+          ${notesHtml}
+        </ul>
+      </div>
     `;
     gamesContainer.appendChild(card);
   });
+
+  document.querySelectorAll(".edge-toggle").forEach(button => {
+    button.addEventListener("click", () => {
+      const target = document.getElementById(button.dataset.target);
+      if (!target) return;
+      const isHidden = target.classList.contains("hidden");
+      target.classList.toggle("hidden");
+      button.textContent = isHidden ? "Hide insights" : "Edge insights";
+    });
+  });
 }
 
-// ---------- Edge Insights ----------
-function renderEdgeInsights() {
-  if (!historicalGames || historicalGames.length === 0) {
-    edgeBox.innerHTML = `<p>No historical data available</p>`;
-    return;
-  }
-
-  const homeDogs = homeDogsUnder(historicalGames, 7);
-  const allDogs = underdogsUnder(historicalGames, 7);
-  const bigHomeFavs = homeFavoritesOver(historicalGames, 7);
-
-  edgeBox.innerHTML = `
-    <div class="edge-stat">
-      <strong>Home dogs ≤ 7</strong><br>
-      ${homeDogs.covers} covers out of ${homeDogs.total} games → <strong>${homeDogs.rate ?? "n/a"}%</strong>
-    </div>
-    <div class="edge-stat">
-      <strong>All underdogs ≤ 7</strong><br>
-      ${allDogs.covers} covers out of ${allDogs.total} games → <strong>${allDogs.rate ?? "n/a"}%</strong>
-    </div>
-    <div class="edge-stat">
-      <strong>Home favorites ≥ 7</strong><br>
-      ${bigHomeFavs.covers} covers out of ${bigHomeFavs.total} games → <strong>${bigHomeFavs.rate ?? "n/a"}%</strong>
-    </div>
-    <p class="edge-note">Based on small 2024 sample only. More data will improve these numbers.</p>
-  `;
-}
-
-// ---------- Week dropdown ----------
 function buildWeekDropdown() {
   weekSelect.innerHTML = "";
   for (let w = 1; w <= 18; w++) {
@@ -133,7 +121,6 @@ function buildWeekDropdown() {
   });
 }
 
-// ---------- Start ----------
 async function init() {
   buildWeekDropdown();
   await loadHistorical();
