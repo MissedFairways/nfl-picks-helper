@@ -1,61 +1,16 @@
 /**
  * edge.js
- * Simple helpers for analyzing the historical data.
- * These stay in the background — they do not affect the main UI.
+ * Per-game and sample-wide historical helpers.
  */
 
-/**
- * Calculate cover rate for a filtered set of games.
- * @param {Array} games - array of historical game objects
- * @param {Function} filterFn - function that returns true for games to include
- * @returns {Object} { total, covers, rate, pushes }
- */
-export function coverRate(games, filterFn) {
-  const filtered = games.filter(filterFn);
-  const total = filtered.length;
-  if (total === 0) {
-    return { total: 0, covers: 0, rate: null, pushes: 0 };
-  }
-
-  let covers = 0;
-  let pushes = 0;
-
-  filtered.forEach(g => {
-    if (g.push) {
-      pushes++;
-    } else if (g.home_covered || g.away_covered) {
-      // For most queries we care about whether the side we filtered for covered.
-      // The filterFn already selected the relevant side, so we count any non-push as a result.
-      // More precise counting is done inside specific helpers below.
-      covers++;
-    }
-  });
-
-  // Better: recalculate properly based on what the filter was looking for.
-  // For now we provide higher-level helpers that do the counting correctly.
-
-  return {
-    total,
-    covers,
-    rate: total > 0 ? +(covers / total * 100).toFixed(1) : null,
-    pushes
-  };
-}
-
-/**
- * Home dogs (home team is underdog) of a certain spread size or less.
- * Example: homeDogsUnder(games, 7) → home dogs getting 7 or fewer points
- */
 export function homeDogsUnder(games, maxSpread = 7) {
-  const filtered = games.filter(g => 
-    g.is_home_dog && 
+  const filtered = games.filter(g =>
+    g.is_home_dog &&
     g.spread_size <= maxSpread &&
     !g.push
   );
-
   const covers = filtered.filter(g => g.home_covered).length;
   const total = filtered.length;
-
   return {
     description: `Home dogs ≤ ${maxSpread}`,
     total,
@@ -64,19 +19,14 @@ export function homeDogsUnder(games, maxSpread = 7) {
   };
 }
 
-/**
- * Home favorites of a certain size or more.
- */
 export function homeFavoritesOver(games, minSpread = 7) {
-  const filtered = games.filter(g => 
-    g.is_home_favorite && 
+  const filtered = games.filter(g =>
+    g.is_home_favorite &&
     g.spread_size >= minSpread &&
     !g.push
   );
-
   const covers = filtered.filter(g => g.home_covered).length;
   const total = filtered.length;
-
   return {
     description: `Home favorites ≥ ${minSpread}`,
     total,
@@ -85,23 +35,12 @@ export function homeFavoritesOver(games, minSpread = 7) {
   };
 }
 
-/**
- * Any underdogs (home or away) of a certain size or less.
- */
 export function underdogsUnder(games, maxSpread = 7) {
-  const filtered = games.filter(g => 
-    g.spread_size <= maxSpread &&
-    !g.push
-  );
-
-  // Underdog covered if the non-favorite side covered
+  const filtered = games.filter(g => g.spread_size <= maxSpread && !g.push);
   const covers = filtered.filter(g => {
-    if (g.is_home_dog) return g.home_covered;
-    return g.away_covered; // away was the dog
+    return g.is_home_dog ? g.home_covered : g.away_covered;
   }).length;
-
   const total = filtered.length;
-
   return {
     description: `All underdogs ≤ ${maxSpread}`,
     total,
@@ -111,13 +50,98 @@ export function underdogsUnder(games, maxSpread = 7) {
 }
 
 /**
- * Quick summary of several common edges (for console or future UI panel)
+ * Build a simple per-game edge note.
+ * game = current schedule game (may or may not have a spread yet)
+ * historical = improved historical.json games
  */
-export function edgeSummary(games) {
-  return {
-    homeDogsUnder7: homeDogsUnder(games, 7),
-    homeDogsUnder3: homeDogsUnder(games, 3),
-    homeFavoritesOver7: homeFavoritesOver(games, 7),
-    underdogsUnder7: underdogsUnder(games, 7)
-  };
+export function analyzeMatchup(game, historical) {
+  const notes = [];
+  let homeScore = 0;
+  let awayScore = 0;
+
+  const home = game.home_team;
+  const away = game.away_team;
+
+  if (!historical || historical.length === 0) {
+    return {
+      notes: ["No historical sample loaded."],
+      leanTeam: null,
+      leanText: "No edge yet"
+    };
+  }
+
+  // Home team ATS at home in the sample
+  const homeAtHome = historical.filter(g => g.home_team === home && !g.push);
+  if (homeAtHome.length > 0) {
+    const covers = homeAtHome.filter(g => g.home_covered).length;
+    notes.push(`${home} covered ${covers}/${homeAtHome.length} at home in the sample.`);
+    if (homeAtHome.length >= 2) {
+      if (covers / homeAtHome.length >= 0.6) homeScore += 1;
+      if (covers / homeAtHome.length <= 0.4) awayScore += 1;
+    }
+  } else {
+    notes.push(`No home games for ${home} in the sample.`);
+  }
+
+  // Away team ATS on the road in the sample
+  const awayOnRoad = historical.filter(g => g.away_team === away && !g.push);
+  if (awayOnRoad.length > 0) {
+    const covers = awayOnRoad.filter(g => g.away_covered).length;
+    notes.push(`${away} covered ${covers}/${awayOnRoad.length} on the road in the sample.`);
+    if (awayOnRoad.length >= 2) {
+      if (covers / awayOnRoad.length >= 0.6) awayScore += 1;
+      if (covers / awayOnRoad.length <= 0.4) homeScore += 1;
+    }
+  } else {
+    notes.push(`No road games for ${away} in the sample.`);
+  }
+
+  // Head-to-head in the sample
+  const h2h = historical.filter(g =>
+    (g.home_team === home && g.away_team === away) ||
+    (g.home_team === away && g.away_team === home)
+  );
+  if (h2h.length > 0) {
+    notes.push(`These two teams have ${h2h.length} game(s) in the sample.`);
+  }
+
+  // If this game already has a closing/current spread, apply pattern edges
+  const spread = game.spread_close ?? game.spread ?? null;
+  if (typeof spread === "number") {
+    const spreadSize = Math.abs(spread);
+    const isHomeFav = spread < 0;
+    const isHomeDog = spread > 0;
+
+    if (isHomeDog && spreadSize <= 7) {
+      const stat = homeDogsUnder(historical, 7);
+      if (stat.total > 0) {
+        notes.push(`Pattern: home dogs ≤ 7 covered ${stat.rate}% (${stat.covers}/${stat.total}).`);
+        if (stat.rate >= 52) homeScore += 1;
+        if (stat.rate <= 48) awayScore += 1;
+      }
+    }
+
+    if (isHomeFav && spreadSize >= 7) {
+      const stat = homeFavoritesOver(historical, 7);
+      if (stat.total > 0) {
+        notes.push(`Pattern: home favorites ≥ 7 covered ${stat.rate}% (${stat.covers}/${stat.total}).`);
+        if (stat.rate >= 52) homeScore += 1;
+        if (stat.rate <= 48) awayScore += 1;
+      }
+    }
+  } else {
+    notes.push("No current line yet, so spread-size edges cannot be applied.");
+  }
+
+  let leanTeam = null;
+  let leanText = "No clear edge in this small sample.";
+  if (homeScore > awayScore) {
+    leanTeam = home;
+    leanText = `Small-sample lean: ${home}`;
+  } else if (awayScore > homeScore) {
+    leanTeam = away;
+    leanText = `Small-sample lean: ${away}`;
+  }
+
+  return { notes, leanTeam, leanText };
 }
