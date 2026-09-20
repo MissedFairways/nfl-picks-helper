@@ -92,16 +92,16 @@ export function sagarinForGame(game, sagarin) {
   if (vegasHomeSpread != null) {
     const sagarinLikesHomeBy = predictedHomeMargin;
     const vegasLikesHomeBy = -vegasHomeSpread;
-    edgePoints = +(sagarinLikesHomeBy - vegasLikesHomeBy).toFixed(1);
+    edgePoints = Number((sagarinLikesHomeBy - vegasLikesHomeBy).toFixed(2));
 
     if (Math.abs(edgePoints) < 0.5) {
       note = `Sagarin ${formatHomeSpread(game, sagarinHomeSpread)} vs Vegas ${formatHomeSpread(game, vegasHomeSpread)} • close to the market`;
     } else if (edgePoints > 0) {
       edgeTeam = game.home_team;
-      note = `Sagarin ${formatHomeSpread(game, sagarinHomeSpread)} vs Vegas ${formatHomeSpread(game, vegasHomeSpread)} • edge ${edgeTeam} by ${edgePoints}`;
+      note = `Sagarin ${formatHomeSpread(game, sagarinHomeSpread)} vs Vegas ${formatHomeSpread(game, vegasHomeSpread)} • edge ${edgeTeam} by ${Math.abs(edgePoints).toFixed(2)}`;
     } else {
       edgeTeam = game.away_team;
-      note = `Sagarin ${formatHomeSpread(game, sagarinHomeSpread)} vs Vegas ${formatHomeSpread(game, vegasHomeSpread)} • edge ${edgeTeam} by ${Math.abs(edgePoints)}`;
+      note = `Sagarin ${formatHomeSpread(game, sagarinHomeSpread)} vs Vegas ${formatHomeSpread(game, vegasHomeSpread)} • edge ${edgeTeam} by ${Math.abs(edgePoints).toFixed(2)}`;
     }
   }
 
@@ -109,7 +109,7 @@ export function sagarinForGame(game, sagarin) {
     homeRating,
     awayRating,
     homeAdv: sagarin.homeAdv || 0,
-    sagarinHomeSpread: +sagarinHomeSpread.toFixed(1),
+    sagarinHomeSpread: Number(sagarinHomeSpread.toFixed(2)),
     vegasHomeSpread,
     edgeTeam,
     edgePoints,
@@ -118,7 +118,8 @@ export function sagarinForGame(game, sagarin) {
 }
 
 function formatHomeSpread(game, homeSpread) {
-  if (homeSpread < 0) return `${game.home_team} ${homeSpread}`;
-  if (homeSpread > 0) return `${game.away_team} -${homeSpread}`;
+  const rounded = Number(homeSpread).toFixed(2);
+  if (homeSpread < 0) return `${game.home_team} ${rounded}`;
+  if (homeSpread > 0) return `${game.away_team} -${rounded}`;
   return "Pick'em";
 }
