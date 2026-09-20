@@ -75,6 +75,33 @@ function gameKey(game) {
   return game.season + "_" + game.week + "_" + game.away_team + "_" + game.home_team;
 }
 
+
+const PICK_ABBR = {
+  "Arizona Cardinals":"ARI","Atlanta Falcons":"ATL","Baltimore Ravens":"BAL","Buffalo Bills":"BUF",
+  "Carolina Panthers":"CAR","Chicago Bears":"CHI","Cincinnati Bengals":"CIN","Cleveland Browns":"CLE",
+  "Dallas Cowboys":"DAL","Denver Broncos":"DEN","Detroit Lions":"DET","Green Bay Packers":"GB",
+  "Houston Texans":"HOU","Indianapolis Colts":"IND","Jacksonville Jaguars":"JAX","Kansas City Chiefs":"KC",
+  "Las Vegas Raiders":"LV","Los Angeles Chargers":"LAC","Los Angeles Rams":"LAR","Miami Dolphins":"MIA",
+  "Minnesota Vikings":"MIN","New England Patriots":"NE","New Orleans Saints":"NO","New York Giants":"NYG",
+  "New York Jets":"NYJ","Philadelphia Eagles":"PHI","Pittsburgh Steelers":"PIT","San Francisco 49ers":"SF",
+  "Seattle Seahawks":"SEA","Tampa Bay Buccaneers":"TB","Tennessee Titans":"TEN","Washington Commanders":"WSH",
+  ARI:"ARI",ATL:"ATL",BAL:"BAL",BUF:"BUF",CAR:"CAR",CHI:"CHI",CIN:"CIN",CLE:"CLE",DAL:"DAL",DEN:"DEN",
+  DET:"DET",GB:"GB",HOU:"HOU",IND:"IND",JAX:"JAX",KC:"KC",LV:"LV",LAC:"LAC",LAR:"LAR",MIA:"MIA",
+  MIN:"MIN",NE:"NE",NO:"NO",NYG:"NYG",NYJ:"NYJ",PHI:"PHI",PIT:"PIT",SF:"SF",SEA:"SEA",TB:"TB",TEN:"TEN",
+  WAS:"WSH",WSH:"WSH"
+};
+
+function teamAbbr(name) {
+  if (!name) return "";
+  return PICK_ABBR[name] || PICK_ABBR[String(name).toUpperCase()] || name;
+}
+
+function pickTeamName(game) {
+  if (game.pick === "home") return game.home_team;
+  if (game.pick === "away") return game.away_team;
+  return null;
+}
+
 function rememberGames(games) {
   const store = loadLineStore();
   games.forEach(game => {
@@ -197,7 +224,7 @@ function updateRecord() {
 }
 
 function setPick(game, side) {
-  game.pick = side;
+  game.pick = game.pick === side ? null : side;
   rememberGames([game]);
   renderGames(currentSchedule);
 }
@@ -333,10 +360,25 @@ function renderSystemBoard(games) {
   return board;
 }
 
+function renderPicksBoard(games) {
+  const board = document.createElement("div");
+  board.className = "picks-board";
+  const picks = (games || [])
+    .filter(g => g.pick === "home" || g.pick === "away")
+    .map(g => teamAbbr(pickTeamName(g)))
+    .filter(Boolean);
+  const line = picks.length ? picks.join(", ") : "none yet";
+  board.innerHTML = '<div class="picks-board-title">Your picks this week</div><div class="picks-board-list">' + line + "</div>";
+  board.style.fontSize = "1.35rem";
+  board.style.margin = "12px 0 20px";
+  return board;
+}
+
 function renderGames(games) {
   gamesContainer.innerHTML = "";
   updateRecord();
   gamesContainer.appendChild(renderSystemBoard(games));
+  gamesContainer.appendChild(renderPicksBoard(games));
   games.forEach((game, index) => {
     const card = document.createElement("div");
     card.className = "game-card";
@@ -354,7 +396,7 @@ function renderGames(games) {
     const injuryText = formatGameInjuries(injurySnapshot, game);
     const injuryLabel = shouldHighlightInjuries(system) ? "Injuries (check)" : "Injuries";
     card.innerHTML =
-      '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + '">' + game.home_team + '</span></div>' +
+      '<div class="matchup"><span class="' + (favoriteName === game.away_team ? "favorite" : "") + (game.pick === "away" ? " picked-team" : "") + '" style="color:' + (game.pick === "away" ? "#22c55e" : "#111111") + '">' + game.away_team + '</span> @ <span class="' + (favoriteName === game.home_team ? "favorite" : "") + (game.pick === "home" ? " picked-team" : "") + '" style="color:' + (game.pick === "home" ? "#22c55e" : "#111111") + '">' + game.home_team + '</span></div>' +
       '<div class="lines">' +
       '<div class="line-item">Status: <strong>' + statusText + '</strong></div>' +
       '<div class="line-item">Favorite: <strong>' + favoriteName + '</strong></div>' +
