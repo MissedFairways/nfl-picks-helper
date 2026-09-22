@@ -1,6 +1,140 @@
 {
   "season": 2026,
   "week": 2,
+  "open": {
+    "saved_at": "2026-09-22T19:20:26.301066+00:00",
+    "games": [
+      {
+        "away_team": "ATL",
+        "home_team": "GB",
+        "spread_close": -6.0,
+        "total_close": 44.5,
+        "favorite": "GB",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "LAC",
+        "home_team": "BUF",
+        "spread_close": -7.0,
+        "total_close": 50.5,
+        "favorite": "BUF",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "CAR",
+        "home_team": "CLE",
+        "spread_close": 2.5,
+        "total_close": 42.5,
+        "favorite": "CAR",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "CIN",
+        "home_team": "PIT",
+        "spread_close": 3.5,
+        "total_close": 42.5,
+        "favorite": "CIN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "NYJ",
+        "home_team": "DET",
+        "spread_close": -6.5,
+        "total_close": 47.5,
+        "favorite": "DET",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "HOU",
+        "home_team": "IND",
+        "spread_close": 2.5,
+        "total_close": 43.5,
+        "favorite": "HOU",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "NE",
+        "home_team": "JAX",
+        "spread_close": -3.0,
+        "total_close": 45.5,
+        "favorite": "JAX",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "KC",
+        "home_team": "MIA",
+        "spread_close": 11.5,
+        "total_close": 46.5,
+        "favorite": "KC",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "TEN",
+        "home_team": "NYG",
+        "spread_close": -3.0,
+        "total_close": 40.5,
+        "favorite": "NYG",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "SEA",
+        "home_team": "WSH",
+        "spread_close": 7.0,
+        "total_close": 40.5,
+        "favorite": "SEA",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "ARI",
+        "home_team": "SF",
+        "spread_close": -8.5,
+        "total_close": 47.5,
+        "favorite": "SF",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "MIN",
+        "home_team": "TB",
+        "spread_close": 1.5,
+        "total_close": 42.5,
+        "favorite": "MIN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "BAL",
+        "home_team": "DAL",
+        "spread_close": 3.0,
+        "total_close": 52.5,
+        "favorite": "BAL",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "LV",
+        "home_team": "NO",
+        "spread_close": -3.0,
+        "total_close": 44.5,
+        "favorite": "NO",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "LAR",
+        "home_team": "DEN",
+        "spread_close": 2.5,
+        "total_close": 45.5,
+        "favorite": "LAR",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "PHI",
+        "home_team": "CHI",
+        "spread_close": 4.5,
+        "total_close": 41.5,
+        "favorite": "PHI",
+        "bookmaker": "DraftKings"
+      }
+    ]
+  },
+  "late": null,
   "saved_at": "2026-09-20T03:49:57.851643Z",
   "games": [
     {
