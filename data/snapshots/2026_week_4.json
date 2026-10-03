@@ -1,0 +1,234 @@
+{
+  "season": 2026,
+  "week": 4,
+  "open": null,
+  "late": {
+    "saved_at": "2026-10-03T18:55:48.289419+00:00",
+    "games": [
+      {
+        "away_team": "IND",
+        "home_team": "WSH",
+        "spread_close": 4.5,
+        "total_close": 46.5,
+        "favorite": "IND",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "ARI",
+        "home_team": "NYG",
+        "spread_close": 2.5,
+        "total_close": 44.5,
+        "favorite": "ARI",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "TEN",
+        "home_team": "BAL",
+        "spread_close": -11.5,
+        "total_close": 42.5,
+        "favorite": "BAL",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "NE",
+        "home_team": "BUF",
+        "spread_close": -7.0,
+        "total_close": 49.5,
+        "favorite": "BUF",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "NYJ",
+        "home_team": "CHI",
+        "spread_close": -3.5,
+        "total_close": 43.5,
+        "favorite": "CHI",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "JAX",
+        "home_team": "CIN",
+        "spread_close": -2.5,
+        "total_close": 51.5,
+        "favorite": "CIN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "DAL",
+        "home_team": "HOU",
+        "spread_close": -3.0,
+        "total_close": 48.5,
+        "favorite": "HOU",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "GB",
+        "home_team": "TB",
+        "spread_close": 3.0,
+        "total_close": 38.5,
+        "favorite": "GB",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "LAR",
+        "home_team": "PHI",
+        "spread_close": 3.5,
+        "total_close": 42.5,
+        "favorite": "LAR",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "MIA",
+        "home_team": "MIN",
+        "spread_close": -10.0,
+        "total_close": 38.5,
+        "favorite": "MIN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "DEN",
+        "home_team": "SF",
+        "spread_close": -3.0,
+        "total_close": 47.5,
+        "favorite": "SF",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "KC",
+        "home_team": "LV",
+        "spread_close": 4.5,
+        "total_close": 47.5,
+        "favorite": "KC",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "LAC",
+        "home_team": "SEA",
+        "spread_close": -7.0,
+        "total_close": 42.5,
+        "favorite": "SEA",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "DET",
+        "home_team": "CAR",
+        "spread_close": 3.5,
+        "total_close": 50.5,
+        "favorite": "DET",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "ATL",
+        "home_team": "NO",
+        "spread_close": -2.5,
+        "total_close": 47.5,
+        "favorite": "NO",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "TB",
+        "home_team": "DAL",
+        "spread_close": -9.5,
+        "total_close": 47.5,
+        "favorite": "DAL",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "PHI",
+        "home_team": "JAX",
+        "spread_close": -3.0,
+        "total_close": 44.5,
+        "favorite": "JAX",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "CHI",
+        "home_team": "GB",
+        "spread_close": -2.5,
+        "total_close": 45.5,
+        "favorite": "GB",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "CIN",
+        "home_team": "MIA",
+        "spread_close": 8.5,
+        "total_close": 46.5,
+        "favorite": "CIN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "HOU",
+        "home_team": "TEN",
+        "spread_close": 6.5,
+        "total_close": 39.5,
+        "favorite": "HOU",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "LV",
+        "home_team": "NE",
+        "spread_close": -3.5,
+        "total_close": 44.5,
+        "favorite": "NE",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "MIN",
+        "home_team": "NO",
+        "spread_close": 2.5,
+        "total_close": 44.5,
+        "favorite": "MIN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "NYG",
+        "home_team": "WSH",
+        "spread_close": -2.5,
+        "total_close": 43.5,
+        "favorite": "WSH",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "DEN",
+        "home_team": "LAC",
+        "spread_close": 2.5,
+        "total_close": 43.5,
+        "favorite": "DEN",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "DET",
+        "home_team": "ARI",
+        "spread_close": 5.5,
+        "total_close": 52.5,
+        "favorite": "DET",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "SF",
+        "home_team": "SEA",
+        "spread_close": -3.0,
+        "total_close": 47.5,
+        "favorite": "SEA",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "BAL",
+        "home_team": "ATL",
+        "spread_close": 6.0,
+        "total_close": 49.5,
+        "favorite": "BAL",
+        "bookmaker": "DraftKings"
+      },
+      {
+        "away_team": "BUF",
+        "home_team": "LAR",
+        "spread_close": -2.5,
+        "total_close": 52.5,
+        "favorite": "LAR",
+        "bookmaker": "DraftKings"
+      }
+    ]
+  }
+}
